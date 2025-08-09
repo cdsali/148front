@@ -1,0 +1,14 @@
+{
+  "clientRemote": "",
+  "gitRemote": "",
+  "gitSha": "c4c3a899024b2c3637da463628364b12b02bbf79",
+  "treeEntries": [],
+  "auditedFiles": [
+    {
+      "path": "src\\App.js",
+      "author": "Desktop-150"
+    }
+  ],
+  "partiallyAuditedFiles": [],
+  "resolvedEntries": []
+}
