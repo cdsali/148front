@@ -34,15 +34,14 @@ const changeState = (state = initialState, { type, payload }) => {
     case SET_ASSIGNED_SOUSCRIPTEURS:
       return { ...state, assignedSouscripteurs: payload };
 
-    case UPDATE_ASSIGNED_SOUSCRIPTEUR:
-      return {
-        ...state,
-        assignedSouscripteurs: state.assignedSouscripteurs.map((sous) =>
-          sous.id_souscripteur === payload.id
-            ? { ...sous, completed: 1 }
-            : sous
-        ),
-      };
+      case UPDATE_ASSIGNED_SOUSCRIPTEUR:
+        return {
+          ...state,
+          assignedSouscripteurs: state.assignedSouscripteurs.filter(
+            (sous) => sous.id_souscripteur !== payload.id
+          ),
+        };
+      
           case RESET_STATE: {
   console.log("RESET_STATE called");
   return initialState;

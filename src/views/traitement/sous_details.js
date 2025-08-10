@@ -553,7 +553,7 @@ const openDocument = async (relativePath, label) => {
       .map(encodeURIComponent)
       .join('/');
 
-    const response = await fetch(`http://localhost:3602/souscripteurs/test-doc/${encodedPath}`);
+    const response = await fetch(`http://192.168.0.148:3602/souscripteurs/test-doc/${encodedPath}`);
 
     if (!response.ok) throw new Error('Failed to load document');
 

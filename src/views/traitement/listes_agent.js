@@ -27,11 +27,12 @@ const AssignedSouscripteurs = ({ userId }) => {
   const itemsPerPage = 10;
 const dispatch = useDispatch();
 
-  // Access from Redux store
   const souscripteurs = useSelector((state) => state.assignedSouscripteurs);
 
   const fetchAssigned = useCallback(async () => {
     if (souscripteurs && souscripteurs.length > 0) return;
+
+    console.log('willl do it');
     const data = await fetchAssignedSouscripteurs();
     if (data?.data) {
       dispatch(setAssignedSouscripteurs(data.data));
@@ -41,6 +42,7 @@ const dispatch = useDispatch();
   }, [dispatch]);
 
   useEffect(() => {
+
     fetchAssigned();
   }, [fetchAssigned]);
 

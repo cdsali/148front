@@ -17,7 +17,9 @@ import {
 } from '@coreui/react';
 import { FaArrowLeft, FaArrowRight, FaEye } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { fetchValidationsPaginated, postBulkValidations } from '../../../api/souscripteurs';
+import { fetchValidationsPaginated, postBulkValidations,fetchValidationsPv } from '../../../api/souscripteurs';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -85,6 +87,126 @@ const ValidationsPage = () => {
       loadData(decisionType, null, true);
     }
   }, [decisionType]);
+
+
+  const handleGeneratePvPdf = async () => {
+    const nomuser = localStorage.getItem('userName') || 'Utilisateur inconnu';
+    setLoading(true);
+  
+    try {
+      const pvData = await fetchValidationsPv();
+      if (!pvData || pvData.length === 0) {
+        alert('Aucune donnée PV à générer.');
+        return;
+      }
+  
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'A4' });
+  
+      const marginLeft = 20;
+      let currentY = 20;
+  
+      // Title
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('PV', marginLeft, currentY);
+  
+      // Date & User
+      const now = new Date();
+      const formattedDateTime = now.toLocaleString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+  
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Date : ${formattedDateTime}`, 150, currentY); // Top right
+      currentY += 8;
+      doc.text(`Généré par : ${nomuser}`, marginLeft, currentY);
+  
+      // Line separator
+      currentY += 5;
+      doc.setLineWidth(0.5);
+      doc.line(marginLeft, currentY, 190, currentY);
+      currentY += 5;
+  
+      // Table
+      autoTable(doc, {
+        startY: currentY,
+        head: [[
+          'Nom',
+          'Prénom',
+          'Date Naissance',
+          'Décision',
+          'Agent',
+          'Affectation',
+          'Date Validation',
+          'Motif'
+        ]],
+        body: pvData.map(item => [
+          item.nom,
+          item.prenom,
+          item.date_nais,
+          item.decision,
+          item.agent_name,
+          item.affectation,
+          item.validated_at,
+          item.motif || '-',
+        ]),
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+          valign: 'middle',
+          halign: 'left',
+          textColor: 20,
+        },
+        headStyles: {
+          fillColor: [52, 73, 94],
+          textColor: 255,
+          fontSize: 10,
+          fontStyle: 'bold',
+        },
+        alternateRowStyles: { fillColor: [240, 240, 240] },
+        margin: { left: marginLeft, right: 20 },
+      });
+  
+      // Statistics
+      const finalY = doc.lastAutoTable.finalY + 10;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+     // doc.text('Statistiques par type de décision :', marginLeft, finalY);
+  
+      const stats = pvData.reduce((acc, item) => {
+        const decision = item.decision || 'Non spécifié';
+        acc[decision] = (acc[decision] || 0) + 1;
+        return acc;
+      }, {});
+  
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      let lineOffset = 6;
+      Object.entries(stats).forEach(([decision, count]) => {
+        doc.text(`• ${decision} : ${count}`, marginLeft + 5, finalY + lineOffset);
+        lineOffset += 6;
+      });
+  
+      // Save the document
+      doc.save('pv-validations.pdf');
+  
+    } catch (error) {
+      console.error('Erreur lors de la génération du PV PDF:', error);
+      alert('Erreur lors de la génération du PV.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
+  
+  
+
 
   const handleToggle = (type) => {
     if (type !== decisionType) {
@@ -160,6 +282,13 @@ const ValidationsPage = () => {
 
   return (
     <div className="p-3">
+
+<div className="d-flex justify-content-end mb-3">
+  <CButton color="secondary" size="sm" onClick={handleGeneratePvPdf}>
+    Générer PV PDF
+  </CButton>
+</div>
+
       <CRow className="mb-3">
         <CCol className="d-flex justify-content-center gap-2 flex-wrap">
           <CButton

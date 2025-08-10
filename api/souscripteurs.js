@@ -387,6 +387,41 @@ export const postBulkValidations = async (decisionsArray) => {
   }
 };
 
+export const fetchValidationsPv = async () => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    console.warn("No token found");
+    return null;
+  }
+
+  const url = new URL(`${base}/souscripteurs/validationspv`);
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.status === 401) {
+      handleLogout();
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Erreur lors de la récupération des validations PV");
+    }
+
+    return data.data || [];
+  } catch (error) {
+    console.error("Erreur fetchValidationsPv:", error);
+    return [];
+  }
+};
 
 
 /*
