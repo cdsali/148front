@@ -13,18 +13,39 @@ export default function RejectModal({ isOpen, onClose, souscripteurId, onSuccess
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+ 
   const predefinedMotifs = [
-    "Résidence manquante",
-    "Cheque manquante",
-    "Fiche de paie manquante",
-    "Informations incorrectes",
+    { code: "A1", text_fr: "Postulant propriétaire d’un bien à usage d’habitation, toute propriété, d’une superficie supérieure à 50 m².", text_ar: "المتقدم مالك لعقار سكني، ملكية كاملة، بمساحة تتجاوز 50 متر مربع." },
+    { code: "A2", text_fr: "Conjoint du postulant propriétaire d’un bien à usage d’habitation, en toute propriété, d’une superficie supérieure à 50 m².", text_ar: "زوج المتقدم مالك لعقار سكني، ملكية كاملة، بمساحة تتجاوز 50 متر مربع." },
+    { code: "A3", text_fr: "Postulant dans propriétaire dans indivision d’un bien à usage d’habitation d’une superficie supérieure à 70 m².", text_ar: "المتقدم مالك في حالة الشيوع لعقار سكني بمساحة تتجاوز 70 متر مربع." },
+    { code: "A4", text_fr: "Le conjoint du postulant est propriétaire d’un bien à usage d’habitation, dans l’indivision, d’une superficie supérieure à 70 m².", text_ar: "زوج المتقدم مالك لعقار سكني في حالة الشيوع، بمساحة تتجاوز 70 متر مربع." },
+    { code: "B1", text_fr: "Postulant propriétaire d’un lot de terrain en toute propriété.", text_ar: "المتقدم مالك لقطعة أرض ملكية كاملة." },
+    { code: "B2", text_fr: "Conjoint du postulant propriétaire d’un lot de terrain en propriété.", text_ar: "زوج المتقدم مالك لقطعة أرض ملكية كاملة." },
+    { code: "B3", text_fr: "Postulant propriétaire d’un lot de terrain dans l’indivision d’une superficie supérieure à 120, 150 ou 200 m².", text_ar: "المتقدم مالك لقطعة أرض في حالة الشيوع بمساحة تتجاوز 120، 150 أو 200 متر مربع." },
+    { code: "B4", text_fr: "Conjoint du postulant propriétaire d’un lot de terrain dans indivision d’une superficie supérieure à 120, 150 ou 200 m².", text_ar: "زوج المتقدم مالك لقطعة أرض في حالة الشيوع بمساحة تتجاوز 120، 150 أو 200 متر مربع." },
+    { code: "C1", text_fr: "Retour de la donation postulant/conjoint possèdent un bien par donation : retour de donation après inscription au programme aadl3.", text_ar: "عودة التبرع، المتقدم/الزوج يمتلكان عقارًا عن طريق التبرع: عودة التبرع بعد التسجيل في برنامج AADL3." },
+    { code: "C2", text_fr: "Occupation d’un logement de fonction ou d’astreinte cessible.", text_ar: "شغل سكن وظيفي أو سكن احتياطي قابل للتحويل." },
+    { code: "D1", text_fr: "Le postulant a bénéficié d’une aide financière dépassant 300.000 dinars.", text_ar: "المتقدم استفاد من مساعدة مالية تتجاوز 300,000 دينار." },
+    { code: "E1", text_fr: "Le postulant détient un permis de construire.", text_ar: "المتقدم يمتلك رخصة بناء." },
+    { code: "E2", text_fr: "Le conjoint du postulant détient un permis de construire.", text_ar: "زوج المتقدم يمتلك رخصة بناء." },
+    { code: "F1", text_fr: "Le postulant n’a pas fourni de résidence ou l'adresse fournie est incorrecte.", text_ar: "المتقدم لم يقدم إقامة أو أن العنوان المقدم غير صحيح." },
+    { code: "F2", text_fr: "Le postulant n’a pas soumis la déclaration sur l'honneur requise.", text_ar: "المتقدم لم يقدم الإقرار على الشرف المطلوب." },
+    { code: "F3", text_fr: "Le postulant n’a pas soumis un chèque barré conforme.", text_ar: "المتقدم لم يقدم شيك مقيد مطابق." },
+    { code: "F4", text_fr: "Le postulant n’a pas soumis la fiche de paie requise.", text_ar: "المتقدم لم يقدم قسيمة الدفع المطلوبة." },
+    { code: "F5", text_fr: "Le postulant n’a pas fourni de carte Chifa valide.", text_ar: "المتقدم لم يقدم بطاقة شفا صالحة." },
+    { code: "F6", text_fr: "Le postulant n’a pas soumis la fiche de famille demandée.", text_ar: "المتقدم لم يقدم وثيقة العائلة المطلوبة." },
+    { code: "F7", text_fr: "Le postulant n’a pas soumis l'acte de mariage.", text_ar: "المتقدم لم يقدم عقد الزواج." },
+    { code: "F8", text_fr: "Le postulant n’a pas fourni une carte d'identité valide.", text_ar: "المتقدم لم يقدم بطاقة هوية صالحة." },
+    { code: "F9", text_fr: "Le conjoint du postulant n’a pas soumis la fiche de paie.", text_ar: "الزوج لم يقدم قسيمة الدفع المطلوبة." },
+    { code: "F10", text_fr: "Le postulant a fait un recours mais n’a pas fourni de documents justificatifs.", text_ar: "المتقدم قدم طعنًا ولكن لم يقدم مستندات داعمة." }
   ];
+  
 
-  const toggleMotif = (motif) => {
+  const toggleMotif = (code) => {
     setSelectedMotifs((prev) =>
-      prev.includes(motif)
-        ? prev.filter((m) => m !== motif)
-        : [...prev, motif]
+      prev.includes(code)
+        ? prev.filter((m) => m !== code)
+        : [...prev, code]
     );
   };
 
@@ -47,7 +68,7 @@ export default function RejectModal({ isOpen, onClose, souscripteurId, onSuccess
     }
 
     const finalMotifString = selectedMotifs.join("; ");
-    // Observation can be empty, no validation needed
+   
 
     const decisionsArray = [{
       souscripteurId,
@@ -98,14 +119,14 @@ export default function RejectModal({ isOpen, onClose, souscripteurId, onSuccess
 
           <div className="checkbox-list">
             {predefinedMotifs.map((motif) => (
-              <label key={motif} className="checkbox-item">
+              <label key={motif.code} className={`checkbox-item ${selectedMotifs.includes(motif.code) ? "checked" : ""}`}>
                 <input
                   type="checkbox"
-                  value={motif}
-                  checked={selectedMotifs.includes(motif)}
-                  onChange={() => toggleMotif(motif)}
+                  value={motif.code}  // Use the code here
+                  checked={selectedMotifs.includes(motif.code)}
+                  onChange={() => toggleMotif(motif.code)}  // Toggle by code
                 />
-                <span className="checkbox-text">{motif}</span>
+                <span>{"("+motif.code+") "+motif.text_fr}</span>  
               </label>
             ))}
           </div>

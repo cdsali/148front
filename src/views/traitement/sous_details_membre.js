@@ -7,7 +7,7 @@ import {
 import CIcon from '@coreui/icons-react';
 import { cilArrowLeft, cilZoomIn, cilZoomOut, cilX, cilFullscreen, cifZw } from '@coreui/icons';
 import '../../scss/styleC.css';
-import { fetchdSouscripteurById,fetchInsertDossierReview ,fetchMarkDossierConforme,fetchMarkDossierExamined,fetchInsertAddress,postBulkValidations} from '../../../api/souscripteurs';
+import { fetchdSouscripteurById,fetchInsertDossierReview ,fetchMarkDossierConforme,fetchMarkDossierExamined,fetchInsertAddress,postBulkValidations,fetchAddressesBySouscripteurId, fetchValidationsBySous} from '../../../api/souscripteurs';
 import { fetchMarkAssignmentCompleted } from '../../../api/assign_agent';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min?url';
@@ -51,6 +51,8 @@ const DocumentItem = React.memo(({
   const [commune, setCommune] = useState("");
   const [address, setAddress] = useState("");
   const [enabled, setEnabled] = useState(true);
+
+  let [disabled, setDisabled] = useState(false);
 
   useEffect(() => {
     if (review) {
@@ -130,7 +132,16 @@ const DocumentItem = React.memo(({
         </div>
 
         <div className="d-flex flex-wrap gap-2">
-          <CButton size="sm" color="light" onClick={handleVisualiserClick}>
+          
+          <CButton size="sm" color="light" 
+          onClick={() => {
+            setDisabled(true); 
+            handleVisualiserClick(); 
+            
+            setTimeout(() => setDisabled(false), 3000); 
+          }}
+          disabled={disabled} 
+          >
             Visualiser
           </CButton>
 
@@ -306,7 +317,7 @@ const countconforme = useMemo(() => calculateConformedCount(), [calculateConform
 
 const [progress, setprogress] = useState(0);
 const [progressf, setprogressf] = useState(0);
-
+const [datavalidation, setdatavalidation] = useState( {});
 useEffect(() => {
   const total = nbr_dossier;
   const done = calculateExaminedCount();
@@ -345,27 +356,49 @@ useEffect(() => {
       console.warn("No ID received");
       return;
     }
-
+  
     const fetchData = async () => {
       try {
-        setIsLoading(true);
-        const data = await fetchdSouscripteurById(id);
-        if (data) {
-          console.log(data);
-          setInfos(data);
-          setmarrie(data.souscripteur.situation=='marie');
-     
+        const souscripteurData = await fetchdSouscripteurById(id);
+        if (souscripteurData) {
+          console.log(souscripteurData);
+          setInfos(souscripteurData);
+          setmarrie(souscripteurData.souscripteur.situation === 'marie');
         }
       } catch (err) {
         setError(err.message || "Failed to fetch souscripteur data");
         console.error("Fetch error:", err);
-      } finally {
-        setIsLoading(false);
       }
     };
-
-    fetchData();
-  }, [id]);
+  
+    const fetchValidationData = async () => {
+      try {
+        const validationData = await fetchValidationsBySous(id);
+        if (validationData) {
+          console.log(validationData);
+          setdatavalidation(validationData.data);
+        }
+      } catch (err) {
+        setError(err.message || "Failed to fetch validation data");
+        console.error("Fetch error:", err);
+      }
+    };
+  
+    const fetchAllData = async () => {
+      setIsLoading(true);
+      try {
+        await fetchData();  // Wait for the souscripteur data
+        await fetchValidationData();  // Wait for the validation data
+      } catch (err) {
+        setError(err.message || "Error fetching data");
+      } finally {
+        setIsLoading(false);  // Ensure loading is false after both fetches
+      }
+    };
+  
+    fetchAllData(); // Call the fetchAllData function that handles both fetches
+  }, [id]);  // Dependency on `id`
+  
 /*
   useEffect(() => {
     if (!modalVisible || !currentDoc) return;
@@ -528,7 +561,7 @@ const renderPdfPages = () => {
   if (!infos) return <p className="p-4">Aucune donnée disponible</p>;
 
   const { souscripteur, dossiers ,
-dossiersreviews,address,conjoint,affiliations,controle,motifs} = infos;
+dossiersreviews,address,conjoint,motifs} = infos;
 
 
 const allConformedMarrié = Object.values(documentStatus).every(
@@ -540,7 +573,7 @@ const allConformedMarrié = Object.values(documentStatus).every(
 
 
 const allConformed=1;
-
+/*
 const openDocument = async (relativePath, label) => {
   try {
     setPdfLoading(true);
@@ -582,7 +615,64 @@ const openDocument = async (relativePath, label) => {
   } finally {
     setPdfLoading(false);
   }
+};*/
+
+const openDocument = async (relativePath, label) => {
+  // Open a blank tab immediately to avoid popup blockers
+  //const newTab = window.open('', '_blank');
+
+  try {
+    setPdfLoading(true);
+
+    // Encode path segments safely
+    const encodedPath = relativePath
+      .split('/')
+      .map(encodeURIComponent)
+      .join('/');
+
+    const response = await fetch(`http://192.168.0.148:3602/souscripteurs/test-doc/${encodedPath}`);
+
+    if (!response.ok) throw new Error('Failed to load document');
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+
+    // Redirect new tab to the blob URL (PDF)
+    /*if (newTab) {
+      newTab.location.href = url;
+    }*/
+
+    // Update state/UI
+    setCurrentDoc(url);
+    setModalVisible(true);
+    setTranslate({ x: 0, y: 0 });
+
+    updateDocumentStatus(label, { vu: 1 });
+
+    const dossierType = mapLabelToDossierType[label];
+    const dossierReview = dossiersreviews?.find(
+      (review) => review.dossier_type === dossierType
+    );
+
+    if (!dossierReview) {
+      await fetchInsertDossierReview(souscripteur.code, dossierType);
+    }
+
+  } catch (err) {
+    // Close the new tab if fetch fails
+    if (newTab) {
+      newTab.close();
+    }
+
+    setAlertProps({
+      type: "error",
+      message: "Fichier non disponible.",
+    });
+  } finally {
+    setPdfLoading(false);
+  }
 };
+
 
 
 
@@ -786,70 +876,66 @@ const handleFavorableClick = async () => {
         </CCol>
       </CRow>
 
-
       <CModal
-        visible={modalVisible}
-        onClose={closeModal}
-        alignment="center"
-        size="xl"
-        backdrop="static"
-        className="pdf-modal"
-      >
-        <CModalHeader closeButton>
-          <CModalTitle>Document</CModalTitle>
-        </CModalHeader>
-        <CModalBody 
-          className="p-0"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onWheel={handleWheel}
-          style={{
-            cursor: isDragging ? 'grabbing' : 'grab',
-            overflow: 'hidden',
-            height: '70vh'
-          }}
-        >
-          {pdfLoading && (
-            <div className="d-flex justify-content-center align-items-center" style={{ height: '100%' }}>
-              <CSpinner color="primary" />
-            </div>
-          )}
-          {pdfError && (
-            <div className="alert alert-danger m-3">
-              {pdfError}
-            </div>
-          )}
-          <div
-            ref={pdfWrapperRef}
-            style={{
-              transform: `translate(${translate.x}px, ${translate.y}px)`,
-              padding: '0px',
-              minWidth: `${minw}px`
-            }}
-          >
-            {renderPdfPages()}
-          </div>
-        </CModalBody>
-        <div className="d-flex justify-content-between p-3 border-top">
-          <div>
-            <CButton color="secondary" size="sm" onClick={resetPosition}>
-              <CIcon icon={cilFullscreen} className="me-1" />
-              Initialiser
-            </CButton>
-          </div>
-          <div className="d-flex gap-2 align-items-center">
-            <CButton color="light" size="sm" onClick={() => setminw(minw-10)}>
-              <CIcon icon={cilZoomOut} />
-            </CButton>
-            
-            <CButton color="light" size="sm" onClick={() => setminw(minw+10)}>
-              <CIcon icon={cilZoomIn} />
-            </CButton>
-          </div>
-        </div>
-      </CModal>
+  visible={modalVisible}
+  onClose={closeModal}
+  alignment="center"
+  size="xl"
+  backdrop="static"
+  className="pdf-modal"
+>
+  <CModalHeader closeButton>
+    <CModalTitle>Document</CModalTitle>
+  </CModalHeader>
+  <CModalBody
+    className="p-0"
+    style={{
+      height: '70vh', 
+      overflow: 'hidden'
+    }}
+  >
+    {pdfLoading && (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '100%' }}>
+        <CSpinner color="primary" />
+      </div>
+    )}
+
+    {pdfError && (
+      <div className="alert alert-danger m-3">
+        {pdfError}
+      </div>
+    )}
+
+    {!pdfLoading && !pdfError && currentDoc && (
+      <iframe
+        src={currentDoc}
+        width="100%"
+        height="100%"
+        style={{ border: 'none' }}
+        title="PDF Document"
+      />
+    )}
+  </CModalBody>
+
+  <div className="d-flex justify-content-between p-3 border-top">
+    <div>
+      <CButton style={{display:"none"}} color="secondary" size="sm" onClick={resetPosition}>
+        <CIcon icon={cilFullscreen} className="me-1" />
+        Initialiser
+      </CButton>
+    </div>
+    <div  className="d-flex gap-2 align-items-center">
+      <CButton style={{display:"none"}} color="light" size="sm" onClick={() => setminw(minw - 10)}>
+        <CIcon icon={cilZoomOut} />
+      </CButton>
+
+      <CButton style={{display:"none"}} color="light" size="sm" onClick={() => setminw(minw + 10)}>
+        <CIcon icon={cilZoomIn} />
+      </CButton>
+    </div>
+  </div>
+</CModal>
+
 
       <CCard className="mt-4 shadow-sm card-border">
         <CCardHeader className="fw-bold text-dark">📌 motifs</CCardHeader>
@@ -879,7 +965,7 @@ const handleFavorableClick = async () => {
           </CTable>
         </CCardBody>
       </CCard>
-
+  {/* 
       <CCard className="mt-4 shadow-sm card-border">
         <CCardHeader className="fw-bold text-dark">📌 Affiliations</CCardHeader>
         <CCardBody>
@@ -912,7 +998,7 @@ const handleFavorableClick = async () => {
         </CCardBody>
       </CCard>
 
-      {/* Contrôle filtre Table */}
+   
       <CCard className="mt-4 shadow-sm mb-5 card-border">
         <CCardHeader className="fw-bold text-dark">🔍 Contrôle Filtre</CCardHeader>
         <CCardBody>
@@ -938,6 +1024,38 @@ const handleFavorableClick = async () => {
           </CTable>
         </CCardBody>
       </CCard>
+ */}
+
+
+      <CCard className="mt-4 shadow-sm mb-5 card-border">
+      
+      {datavalidation ? (
+        
+      <CTable responsive style={{ marginTop: '20px' }}>
+        <CTableHead color="light">
+          <CTableRow>
+            <CTableHeaderCell>Decision membre</CTableHeaderCell>
+            <CTableHeaderCell>Motif</CTableHeaderCell>
+            <CTableHeaderCell>Observation Cadre</CTableHeaderCell>
+          </CTableRow>
+        </CTableHead>
+        <CTableBody>
+          <CTableRow>
+            <CTableHeaderCell>{datavalidation.decision}</CTableHeaderCell>
+            <CTableHeaderCell>{datavalidation.motif}</CTableHeaderCell>
+            <CTableHeaderCell>{datavalidation.observation_cadre}</CTableHeaderCell>
+          </CTableRow>
+        </CTableBody>
+      </CTable>
+    ) : (
+      <p style={{ color: '#FF6347', fontSize: '1rem', fontStyle: 'italic', marginTop: '20px' }}>
+        No data available
+      </p>
+    )}
+
+
+</CCard>
+
 
    
       <div className="d-flex justify-content-end">

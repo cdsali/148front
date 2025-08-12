@@ -51,7 +51,7 @@ const DocumentItem = React.memo(({
   const [commune, setCommune] = useState("");
   const [address, setAddress] = useState("");
   const [enabled, setEnabled] = useState(true);
-
+let [disabled, setDisabled] = useState(false);
   useEffect(() => {
     if (review) {
       if (documentStatus[label]?.vu === 0) updateDocumentStatus(label, { vu: 1 });
@@ -130,9 +130,18 @@ const DocumentItem = React.memo(({
         </div>
 
         <div className="d-flex flex-wrap gap-2">
-          <CButton size="sm" color="light" onClick={handleVisualiserClick}>
-            Visualiser
-          </CButton>
+         
+         <CButton size="sm" color="light" 
+                   onClick={() => {
+                     setDisabled(true); 
+                     handleVisualiserClick(); 
+                     
+                     setTimeout(() => setDisabled(false), 3000); 
+                   }}
+                   disabled={disabled} 
+                   >
+                     Visualiser
+                   </CButton>
 
           {status.vu === 1 && status.examined === 0 && dossierType === "Recours" &&(
             <CButton size="sm" color="warning" onClick={handleExamineClick}>
@@ -527,10 +536,12 @@ const renderPdfPages = () => {
   if (isLoading) return <p className="p-4">Chargement...</p>;
   if (error) return <p className="p-4 text-danger">Error: {error}</p>;
   if (!infos) return <p className="p-4">Aucune donnée disponible</p>;
-
+/*
   const { souscripteur, dossiers ,
 dossiersreviews,address,conjoint,affiliations,controle,motifs} = infos;
-
+*/
+const { souscripteur, dossiers ,
+  dossiersreviews,address,conjoint,motifs} = infos;
 
 const allConformedMarrié = Object.values(documentStatus).every(
     (status) => status.conforme === 2
@@ -544,10 +555,13 @@ const allConformedMarrié = Object.values(documentStatus).every(
 const allConformed=1;
 
 const openDocument = async (relativePath, label) => {
+  // Open a blank tab immediately to avoid popup blockers
+  //const newTab = window.open('', '_blank');
+
   try {
     setPdfLoading(true);
 
-    // Encode each path segment but keep slashes intact
+    // Encode path segments safely
     const encodedPath = relativePath
       .split('/')
       .map(encodeURIComponent)
@@ -560,6 +574,12 @@ const openDocument = async (relativePath, label) => {
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
 
+    // Redirect new tab to the blob URL (PDF)
+    /*if (newTab) {
+      newTab.location.href = url;
+    }*/
+
+    // Update state/UI
     setCurrentDoc(url);
     setModalVisible(true);
     setTranslate({ x: 0, y: 0 });
@@ -573,10 +593,14 @@ const openDocument = async (relativePath, label) => {
 
     if (!dossierReview) {
       await fetchInsertDossierReview(souscripteur.code, dossierType);
-      // optional: you might want to handle success/failure here
     }
 
   } catch (err) {
+    // Close the new tab if fetch fails
+    if (newTab) {
+      newTab.close();
+    }
+
     setAlertProps({
       type: "error",
       message: "Fichier non disponible.",
@@ -747,6 +771,7 @@ const handleFavorableClick = async () => {
       </CRow>
 
 
+{/*
       <CModal
         visible={modalVisible}
         onClose={closeModal}
@@ -809,7 +834,68 @@ const handleFavorableClick = async () => {
             </CButton>
           </div>
         </div>
+      </CModal> */}
+
+        <CModal
+        visible={modalVisible}
+        onClose={closeModal}
+        alignment="center"
+        size="xl"
+        backdrop="static"
+        className="pdf-modal"
+      >
+        <CModalHeader closeButton>
+          <CModalTitle>Document</CModalTitle>
+        </CModalHeader>
+        <CModalBody
+          className="p-0"
+          style={{
+            height: '70vh', 
+            overflow: 'hidden'
+          }}
+        >
+          {pdfLoading && (
+            <div className="d-flex justify-content-center align-items-center" style={{ height: '100%' }}>
+              <CSpinner color="primary" />
+            </div>
+          )}
+      
+          {pdfError && (
+            <div className="alert alert-danger m-3">
+              {pdfError}
+            </div>
+          )}
+      
+          {!pdfLoading && !pdfError && currentDoc && (
+            <iframe
+              src={currentDoc}
+              width="100%"
+              height="100%"
+              style={{ border: 'none' }}
+              title="PDF Document"
+            />
+          )}
+        </CModalBody>
+      
+        <div className="d-flex justify-content-between p-3 border-top">
+          <div>
+            <CButton style={{display:"none"}} color="secondary" size="sm" onClick={resetPosition}>
+              <CIcon icon={cilFullscreen} className="me-1" />
+              Initialiser
+            </CButton>
+          </div>
+          <div style={{display:"none"}} className="d-flex gap-2 align-items-center">
+            <CButton color="light" size="sm" onClick={() => setminw(minw - 10)}>
+              <CIcon icon={cilZoomOut} />
+            </CButton>
+      
+            <CButton style={{display:"none"}} color="light" size="sm" onClick={() => setminw(minw + 10)}>
+              <CIcon icon={cilZoomIn} />
+            </CButton>
+          </div>
+        </div>
       </CModal>
+      
 
       <CCard className="mt-4 shadow-sm card-border">
         <CCardHeader className="fw-bold text-dark">📌 motifs</CCardHeader>
@@ -839,7 +925,7 @@ const handleFavorableClick = async () => {
           </CTable>
         </CCardBody>
       </CCard>
-
+{/*
       <CCard className="mt-4 shadow-sm card-border">
         <CCardHeader className="fw-bold text-dark">📌 Affiliations</CCardHeader>
         <CCardBody>
@@ -872,7 +958,7 @@ const handleFavorableClick = async () => {
         </CCardBody>
       </CCard>
 
-      {/* Contrôle filtre Table */}
+    
       <CCard className="mt-4 shadow-sm mb-5 card-border">
         <CCardHeader className="fw-bold text-dark">🔍 Contrôle Filtre</CCardHeader>
         <CCardBody>
@@ -898,7 +984,7 @@ const handleFavorableClick = async () => {
           </CTable>
         </CCardBody>
       </CCard>
-
+*/}
    
       <div className="d-flex justify-content-end">
         <CButton color="warning" style={{marginRight:"5px"}} onClick={openCompleteModal}>❌ Completer</CButton>

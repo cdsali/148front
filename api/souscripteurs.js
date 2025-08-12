@@ -309,7 +309,7 @@ export const fetchDossiersTraitesParJour = async () => {
   }
 };
 
-
+/*
 export const fetchValidationsPaginated = async ({ decision, dr, limit = 10, offset = 0 }) => {
   const token = localStorage.getItem("token");
 
@@ -323,6 +323,52 @@ export const fetchValidationsPaginated = async ({ decision, dr, limit = 10, offs
   url.searchParams.append("dr", dr);
   url.searchParams.append("limit", limit);
   url.searchParams.append("offset", offset);
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.status === 401) {
+      handleLogout();
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Erreur lors de la récupération des validations");
+    }
+
+    return data.data || [];
+  } catch (error) {
+    console.error("Erreur fetchValidationsPaginated:", error);
+    return [];
+  }
+};
+*/
+
+
+export const fetchValidationsPaginated = async ({ decision, dr, observation_cadre, limit = 10, offset = 0 }) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    console.warn("No token found");
+    return null;
+  }
+
+  const url = new URL(`${base}/souscripteurs/validations`);
+  url.searchParams.append("decision", decision);
+  url.searchParams.append("dr", dr);
+  url.searchParams.append("limit", limit);
+  url.searchParams.append("offset", offset);
+
+ 
+    url.searchParams.append("observation_cadre", observation_cadre);
+ 
 
   try {
     const response = await fetch(url.toString(), {
@@ -464,3 +510,41 @@ export const fetchInsertToComplete = async (souscripteurId, dossier) => {
   }
 };
 */
+
+export const fetchValidationsBySous = async (souscripteur_id) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    console.warn("No token found");
+    return null;
+  }
+
+  // Make sure to include souscripteur_id in the query string
+  const url = `${base}/souscripteurs/validations/sous?souscripteur_id=${souscripteur_id}`;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET", // GET method does not support body
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',  // Optional, not needed for GET requests
+      },
+    });
+
+    if (response.status === 401) {
+      handleLogout();
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Error fetching validations for souscripteur");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error fetching validations for souscripteur:", error);
+    return null;
+  }
+};

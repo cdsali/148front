@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   CTable,
   CTableHead,
@@ -17,14 +17,13 @@ import {
 } from '@coreui/react';
 import { FaArrowLeft, FaArrowRight, FaEye } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { fetchValidationsPaginated, postBulkValidations,fetchValidationsPv } from '../../../api/souscripteurs';
+import { fetchValidationsPaginated, postBulkValidations, fetchValidationsPv } from '../../../api/souscripteurs';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const ITEMS_PER_PAGE = 10;
 
 const ValidationsPage = () => {
-
   const storedUser = localStorage.getItem('UserDr');
   const userDr = storedUser ? JSON.parse(storedUser)?.dr || 4 : 4;
 
@@ -32,19 +31,20 @@ const ValidationsPage = () => {
   const [validations, setValidations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
-  const [lastId, setLastId] = useState(null);
-  const [prevStack, setPrevStack] = useState([]); // stores stack of previous lastIds for back nav
-  const [hasNextPage, setHasNextPage] = useState(false);
+  const [pagination, setPagination] = useState({ lastId: null, hasNextPage: false });
 
   const navigate = useNavigate();
 
-  // Load data
-  const loadData = async (type, cursor = null, isNext = true) => {
-    setLoading(true);
+  // Optimized Data Fetching
+  const loadData = async (type, cursor = null, isNext = true,bol=false) => {
+    setLoading(false);
+  
+
     try {
       const result = await fetchValidationsPaginated({
         decision: type,
         userDr,
+        observation_cadre: bol, 
         limit: ITEMS_PER_PAGE,
         lastId: cursor,
       });
@@ -76,156 +76,41 @@ const ValidationsPage = () => {
       setLoading(false);
     }
   };
-
-  // Initial data load
+  
   useEffect(() => {
     if (decisionType) {
-      setValidations([]);
+
+           let dec=decisionType;
+  let bol=false;
+      if (decisionType == "rejeteo") {
+        dec = "rejete";
+        bol=true;
+         
+      } else if (decisionType == "completeo") {
+        dec = "complete";
+        bol=true;
+      } 
+
+    /*  setValidations([]);
       setSelectedRows([]);
       setLastId(null);
-      setPrevStack([]);
-      loadData(decisionType, null, true);
+      setPrevStack([]);*/
+    
+      loadData(dec, null, true,bol);
     }
   }, [decisionType]);
 
-
-  const handleGeneratePvPdf = async () => {
-    const nomuser = localStorage.getItem('userName') || 'Utilisateur inconnu';
-    setLoading(true);
-  
-    try {
-      const pvData = await fetchValidationsPv();
-      if (!pvData || pvData.length === 0) {
-        alert('Aucune donnée PV à générer.');
-        return;
-      }
-  
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'A4' });
-  
-      const marginLeft = 20;
-      let currentY = 20;
-  
-      // Title
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text('PV', marginLeft, currentY);
-  
-      // Date & User
-      const now = new Date();
-      const formattedDateTime = now.toLocaleString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-  
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Date : ${formattedDateTime}`, 150, currentY); // Top right
-      currentY += 8;
-      doc.text(`Généré par : ${nomuser}`, marginLeft, currentY);
-  
-      // Line separator
-      currentY += 5;
-      doc.setLineWidth(0.5);
-      doc.line(marginLeft, currentY, 190, currentY);
-      currentY += 5;
-  
-      // Table
-      autoTable(doc, {
-        startY: currentY,
-        head: [[
-          'Nom',
-          'Prénom',
-          'Date Naissance',
-          'Décision',
-          'Agent',
-          'Affectation',
-          'Date Validation',
-          'Motif'
-        ]],
-        body: pvData.map(item => [
-          item.nom,
-          item.prenom,
-          item.date_nais,
-          item.decision,
-          item.agent_name,
-          item.affectation,
-          item.validated_at,
-          item.motif || '-',
-        ]),
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-          valign: 'middle',
-          halign: 'left',
-          textColor: 20,
-        },
-        headStyles: {
-          fillColor: [52, 73, 94],
-          textColor: 255,
-          fontSize: 10,
-          fontStyle: 'bold',
-        },
-        alternateRowStyles: { fillColor: [240, 240, 240] },
-        margin: { left: marginLeft, right: 20 },
-      });
-  
-      // Statistics
-      const finalY = doc.lastAutoTable.finalY + 10;
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-     // doc.text('Statistiques par type de décision :', marginLeft, finalY);
-  
-      const stats = pvData.reduce((acc, item) => {
-        const decision = item.decision || 'Non spécifié';
-        acc[decision] = (acc[decision] || 0) + 1;
-        return acc;
-      }, {});
-  
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      let lineOffset = 6;
-      Object.entries(stats).forEach(([decision, count]) => {
-        doc.text(`• ${decision} : ${count}`, marginLeft + 5, finalY + lineOffset);
-        lineOffset += 6;
-      });
-  
-      // Save the document
-      doc.save('pv-validations.pdf');
-  
-    } catch (error) {
-      console.error('Erreur lors de la génération du PV PDF:', error);
-      alert('Erreur lors de la génération du PV.');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  
-  
-  
-
-
-  const handleToggle = (type) => {
-    if (type !== decisionType) {
-      setDecisionType(type);
-    }
-  };
-
+  // Handle next and previous pagination
   const handleNext = () => {
-    if (hasNextPage && validations.length > 0) {
-      const nextCursor = validations[validations.length - 1].id_souscripteur;
-      loadData(decisionType, nextCursor, true);
+    if (pagination.hasNextPage) {
+      loadData(decisionType, pagination.lastId);
     }
   };
 
   const handlePrev = () => {
-    if (prevStack.length > 0) {
-      const previousCursor = prevStack[prevStack.length - 2] || null;
-      loadData(decisionType, previousCursor, false);
-    }
+    // No prev-stack needed if we manage the lastId directly
+    setPagination((prev) => ({ ...prev, lastId: prev.lastId - ITEMS_PER_PAGE }));
+    loadData(decisionType, pagination.lastId);
   };
 
   const handleView = (id) => {
@@ -238,56 +123,116 @@ const ValidationsPage = () => {
     );
   };
 
- const handleValider = async () => {
-  if (selectedRows.length === 0) return;
+  // Generate PV PDF with pagination
+  const handleGeneratePvPdf = async () => {
+    const nomuser = localStorage.getItem('userName') || 'Utilisateur inconnu';
+    setLoading(true);
+    try {
+      const pvData = await fetchValidationsPv();
+      if (!pvData || pvData.length === 0) {
+        alert('Aucune donnée PV à générer.');
+        return;
+      }
 
-  const token = localStorage.getItem('token');
-  if (!token) {
-    alert('Token manquant, veuillez vous reconnecter.');
-    return;
-  }
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'A4' });
+      const marginLeft = 20;
+      let currentY = 20;
 
-  const payload = JSON.parse(atob(token.split('.')[1]));
-  const agentId = payload?.userId;
-  if (!agentId) {
-    alert("Impossible d'identifier l'utilisateur");
-    return;
-  }
+      // Title and user info
+      doc.setFontSize(16).setFont('helvetica', 'bold').text('PV', marginLeft, currentY);
+      const now = new Date();
+      const formattedDateTime = now.toLocaleString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      doc.setFontSize(10).setFont('helvetica', 'normal').text(`Date : ${formattedDateTime}`, 150, currentY);
+      currentY += 8;
+      doc.text(`Généré par : ${nomuser}`, marginLeft, currentY);
 
-  const decisionsArray = selectedRows.map((id) => ({
-    souscripteurId: id,
-    agentId,
-    decision: 'valide',
-    motif: null,
-  }));
+      // Table
+      currentY += 15;
+      autoTable(doc, {
+        startY: currentY,
+        head: [
+          ['Nom', 'Prénom', 'Date Naissance', 'Décision agent', 'Agent', 'Affectation', 'Date Validation', 'Motif', 'president validation', 'decision president', 'motif president'],
+        ],
+        body: pvData.map(item => [
+          item.nom,
+          item.prenom,
+          item.date_nais,
+          item.decision,
+          item.agent_name,
+          item.affectation,
+          item.validated_at,
+          item.motif || '-',
+          item.membre_name || '-',
+          item.decision_membre || '-',
+          item.motif_membre || '-',
+        ]),
+        styles: {
+          fontSize: 6,
+          cellPadding: 1,
+          valign: 'middle',
+          halign: 'left',
+          textColor: 20,
+        },
+        headStyles: {
+          fillColor: [52, 73, 94],
+          textColor: 255,
+          fontSize: 7,
+          fontStyle: 'bold',
+        },
+        alternateRowStyles: { fillColor: [240, 240, 240] },
+        margin: { left: marginLeft, right: 10 },
+      });
 
-  const res = await postBulkValidations(decisionsArray);
+      // Statistics
+      const stats = pvData.reduce((acc, item) => {
+        const decision = item.decision || 'Non spécifié';
+        acc[decision] = (acc[decision] || 0) + 1;
+        return acc;
+      }, {});
+      const finalY = doc.lastAutoTable.finalY + 10;
+      doc.setFontSize(12).setFont('helvetica', 'bold');
+      let lineOffset = 6;
+      Object.entries(stats).forEach(([decision, count]) => {
+        doc.text(`• ${decision} : ${count}`, marginLeft + 5, finalY + lineOffset);
+        lineOffset += 6;
+      });
 
-  if (res?.success) {
-    alert('Validations enregistrées.');
+      // Save the document
+      doc.save('pv-validations.pdf');
+    } catch (error) {
+      console.error('Erreur lors de la génération du PV PDF:', error);
+      alert('Erreur lors de la génération du PV.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    setValidations((prev) => prev.filter((row) => !selectedRows.includes(row.id_souscripteur)));
+  const handleToggle = (type) => {
+    setDecisionType(type);
+  };
 
-    // Clear selection
-    setSelectedRows([]);
-    // Clear selection
- 
-
-    // Optionally reload if needed:
-    // loadData(decisionType, page);
-  } else {
-    alert('Erreur lors de la validation.');
-  }
-};
+  // Memoize stats for performance
+  const stats = useMemo(() => {
+    return validations.reduce((acc, item) => {
+      const decision = item.decision || 'Non spécifié';
+      acc[decision] = (acc[decision] || 0) + 1;
+      return acc;
+    }, {});
+  }, [validations]);
 
   return (
     <div className="p-3">
-
-<div className="d-flex justify-content-end mb-3">
-  <CButton color="secondary" size="sm" onClick={handleGeneratePvPdf}>
-    Générer PV PDF
-  </CButton>
-</div>
+      <div className="d-flex justify-content-end mb-3">
+        <CButton color="secondary" size="sm" onClick={handleGeneratePvPdf}>
+          Générer PV PDF
+        </CButton>
+      </div>
 
       <CRow className="mb-3">
         <CCol className="d-flex justify-content-center gap-2 flex-wrap">
@@ -305,6 +250,16 @@ const ValidationsPage = () => {
           >
             Défavorables
           </CButton>
+
+
+          <CButton
+            size="sm"
+            color={decisionType === 'rejeteo' ? 'danger' : 'light'}
+            onClick={() => handleToggle('rejeteo')}
+          >
+            Défavorables observation
+          </CButton>
+
           <CButton
             size="sm"
             color={decisionType === 'complete' ? 'warning' : 'light'}
@@ -312,19 +267,24 @@ const ValidationsPage = () => {
           >
             Completer
           </CButton>
+
+          <CButton
+            size="sm"
+            color={decisionType === 'completeo' ? 'warning' : 'light'}
+            onClick={() => handleToggle('completeo')}
+          >
+            Completer observation
+          </CButton>
         </CCol>
       </CRow>
+
 
       <CCard>
         <CCardBody>
           <CCardTitle className="text-center fw-bold mb-3 fs-6">
             Liste des validations{' '}
             <span className={`text-${decisionType === 'valide' ? 'success' : 'danger'}`}>
-              {decisionType === 'valide'
-                ? 'favorables'
-                : decisionType === 'rejete'
-                ? 'défavorables'
-                : ''}
+              {decisionType === 'valide' ? 'favorables' : decisionType === 'rejete' ? 'défavorables' : ''}
             </span>
           </CCardTitle>
 
@@ -336,8 +296,8 @@ const ValidationsPage = () => {
             <div className="text-center text-muted py-4">Aucune donnée disponible.</div>
           ) : (
             <>
-              <div className="table-responsive">
-                <CTable small striped hover className="text-center align-middle">
+              <div className="overflow-x-auto">
+              <CTable small striped hover className="text-center align-middle">
                   <CTableHead>
                     <CTableRow className="bg-dark text-white">
                       <CTableHeaderCell>
@@ -401,39 +361,32 @@ const ValidationsPage = () => {
                 </CTable>
               </div>
 
-              <div className="d-flex justify-content-between align-items-center mt-3 px-2 flex-wrap gap-2">
+              <div className="d-flex justify-content-between">
                 <CButton
-                  color="light"
                   size="sm"
+                  color="light"
+                  disabled={!pagination.lastId}
                   onClick={handlePrev}
-                  disabled={prevStack.length === 0}
-                  title="Précédent"
                 >
-                  <FaArrowLeft />
+                  <FaArrowLeft /> Précédent
                 </CButton>
-
-                <small className="text-muted">
-                  Page {prevStack.length + 1}
-                </small>
-
                 <CButton
-                  color="light"
                   size="sm"
+                  color="light"
+                  disabled={!pagination.hasNextPage}
                   onClick={handleNext}
-                  disabled={!hasNextPage}
-                  title="Suivant"
                 >
-                  <FaArrowRight />
+                  Suivant <FaArrowRight />
                 </CButton>
               </div>
 
-              {selectedRows.length > 0 && (
-                <div className="text-center mt-3">
-                  <CButton color="primary" size="sm" onClick={handleValider}>
-                    Valider la sélection ({selectedRows.length})
-                  </CButton>
-                </div>
-              )}
+              <div className="text-center mt-3">
+                {Object.entries(stats).map(([decision, count]) => (
+                  <div key={decision}>
+                    <strong>{decision}</strong>: {count} {count > 1 ? 'éléments' : 'élément'}
+                  </div>
+                ))}
+              </div>
             </>
           )}
         </CCardBody>
