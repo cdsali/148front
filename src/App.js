@@ -38,12 +38,13 @@ const App = () => {
       setColorMode(storedTheme)
     }
     setLoading(false);
-/*
-    const checkStatus = async () => {
+
+  /*  const checkStatus = async () => {
       try {
-        const response = await fetch('http://localhost:3602/status') 
-        const data = await response.json()
-        if (data.maintenance === true) {
+        const test=true;
+       // const response = await fetch('http://192.168.0.148:3602/status') 
+      //  const data = await response.json()
+        if (test === true) {
           setMaintenanceMode(true)
         }
       } catch (error) {
@@ -52,8 +53,8 @@ const App = () => {
         setLoading(false)
       }
     }
-*/
-    //checkStatus()
+
+    checkStatus()*/
   }, []) // only run once
 
   if (loading) {

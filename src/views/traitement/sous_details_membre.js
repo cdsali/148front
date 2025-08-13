@@ -617,7 +617,7 @@ const openDocument = async (relativePath, label) => {
   }
 };*/
 
-const openDocument = async (relativePath, label) => {
+const openDocument = async (relativePath,isRecour, label) => {
   // Open a blank tab immediately to avoid popup blockers
   //const newTab = window.open('', '_blank');
 
@@ -630,7 +630,9 @@ const openDocument = async (relativePath, label) => {
       .map(encodeURIComponent)
       .join('/');
 
-    const response = await fetch(`http://192.168.0.148:3602/souscripteurs/test-doc/${encodedPath}`);
+   
+
+    const response = await fetch(`http://192.168.0.148:3602/souscripteurs/test-doc/${encodedPath}?isrecour=${isRecour}`);
 
     if (!response.ok) throw new Error('Failed to load document');
 
@@ -851,25 +853,25 @@ const handleFavorableClick = async () => {
               </div>
 */}
              
-              <DocumentItem label="Certificat de résidence" path={dossiers?.residence_path} onClick={() => openDocument(dossiers?.residence_path,"Certificat de résidence")} documentStatus={documentStatus}
+              <DocumentItem label="Certificat de résidence" path={dossiers?.residence_path} onClick={() => openDocument(dossiers?.residence_path,'0',"Certificat de résidence")} documentStatus={documentStatus}
         updateDocumentStatus={updateDocumentStatus} dossiersreviews={dossiersreviews } souscripteur={souscripteur.code} setAlertProps={setAlertProps} residence={address} />
-              <DocumentItem label="Déclaration sur l'honneur" path={dossiers?.declaration_honneur_path} onClick={() => openDocument(dossiers?.declaration_honneur_path,"Déclaration sur l'honneur")} documentStatus={documentStatus}
+              <DocumentItem label="Déclaration sur l'honneur" path={dossiers?.declaration_honneur_path} onClick={() => openDocument(dossiers?.declaration_honneur_path,'0',"Déclaration sur l'honneur")} documentStatus={documentStatus}
         updateDocumentStatus={updateDocumentStatus} dossiersreviews={dossiersreviews } souscripteur={souscripteur.code} setAlertProps={setAlertProps} />
-              <DocumentItem label="Chèque barré" path={dossiers?.cheque_barre_path} onClick={() => openDocument(dossiers?.cheque_barre_path,"Chèque barré")} documentStatus={documentStatus}
+              <DocumentItem label="Chèque barré" path={dossiers?.cheque_barre_path} onClick={() => openDocument(dossiers?.cheque_barre_path,'0',"Chèque barré")} documentStatus={documentStatus}
         updateDocumentStatus={updateDocumentStatus} dossiersreviews={dossiersreviews } souscripteur={souscripteur.code} setAlertProps={setAlertProps} />
-              <DocumentItem label="Fiche de paie" path={dossiers?.fiche_paie_path} onClick={() => openDocument(dossiers?.fiche_paie_path,"Fiche de paie")} documentStatus={documentStatus}
+              <DocumentItem label="Fiche de paie" path={dossiers?.fiche_paie_path} onClick={() => openDocument(dossiers?.fiche_paie_path,'0',"Fiche de paie")} documentStatus={documentStatus}
         updateDocumentStatus={updateDocumentStatus} dossiersreviews={dossiersreviews } souscripteur={souscripteur.code} setAlertProps={setAlertProps}  />
-              <DocumentItem label="Carte Chifa" path={dossiers?.carte_chifa_path} onClick={() => openDocument(dossiers?.carte_chifa_path,"Carte Chifa")} documentStatus={documentStatus}
+              <DocumentItem label="Carte Chifa" path={dossiers?.carte_chifa_path} onClick={() => openDocument(dossiers?.carte_chifa_path,'0',"Carte Chifa")} documentStatus={documentStatus}
         updateDocumentStatus={updateDocumentStatus} dossiersreviews={dossiersreviews }  souscripteur={souscripteur.code} setAlertProps={setAlertProps} />
-              <DocumentItem label="Fiche familiale" path={dossiers?.fiche_famille_path} onClick={() => openDocument(dossiers?.fiche_famille_path,"Fiche familiale")} documentStatus={documentStatus}
+              <DocumentItem label="Fiche familiale" path={dossiers?.fiche_famille_path} onClick={() => openDocument(dossiers?.fiche_famille_path,'0',"Fiche familiale")} documentStatus={documentStatus}
         updateDocumentStatus={updateDocumentStatus} dossiersreviews={dossiersreviews } souscripteur={souscripteur.code} setAlertProps={setAlertProps} />
-              <DocumentItem label="Acte de mariage" path={dossiers?.acte_mariage_path} onClick={() => openDocument(dossiers?.acte_mariage_path,"Acte de mariage")} documentStatus={documentStatus}
+              <DocumentItem label="Acte de mariage" path={dossiers?.acte_mariage_path} onClick={() => openDocument(dossiers?.acte_mariage_path,'0',"Acte de mariage")} documentStatus={documentStatus}
         updateDocumentStatus={updateDocumentStatus} dossiersreviews={dossiersreviews } souscripteur={souscripteur.code} setAlertProps={setAlertProps} />
-              <DocumentItem label="Carte d'identité" path={dossiers?.carte_identite_path} onClick={() => openDocument(dossiers?.carte_identite_path,"Carte d'identité")} documentStatus={documentStatus}
+              <DocumentItem label="Carte d'identité" path={dossiers?.carte_identite_path} onClick={() => openDocument(dossiers?.carte_identite_path,'0',"Carte d'identité")} documentStatus={documentStatus}
         updateDocumentStatus={updateDocumentStatus} dossiersreviews={dossiersreviews } souscripteur={souscripteur.code}  setAlertProps={setAlertProps} />
-              <DocumentItem label="Fiche de paie (conjoint)" path={dossiers?.fiche_paie_conjoint_path} onClick={() => openDocument(dossiers?.fiche_paie_conjoint_path,"Fiche de paie (conjoint)")} documentStatus={documentStatus}
+              <DocumentItem label="Fiche de paie (conjoint)" path={dossiers?.fiche_paie_conjoint_path} onClick={() => openDocument(dossiers?.fiche_paie_conjoint_path,'0',"Fiche de paie (conjoint)")} documentStatus={documentStatus}
         updateDocumentStatus={updateDocumentStatus} dossiersreviews={dossiersreviews } souscripteur={souscripteur.code} setAlertProps={setAlertProps} />
-           <DocumentItem label="Recours" path={dossiers?.recours_path} onClick={() => openDocument(dossiers?.recours_path,"Recours")} documentStatus={documentStatus}
+           <DocumentItem label="Recours" path={dossiers?.recours_path} onClick={() => openDocument(dossiers?.recours_path,'1',"Recours")} documentStatus={documentStatus}
         updateDocumentStatus={updateDocumentStatus} dossiersreviews={dossiersreviews } souscripteur={souscripteur.code} setAlertProps={setAlertProps} />
             </CCardBody>
           </CCard>
@@ -1058,7 +1060,7 @@ const handleFavorableClick = async () => {
 
 
    
-      <div className="d-flex justify-content-end">
+      <div className="d-flex justify-content-end" style={{marginTop:"10px"}}>
         <CButton color="warning" style={{marginRight:"5px"}} onClick={openCompleteModal}>❌ Completer</CButton>
 
  
