@@ -273,6 +273,47 @@ export const fetchSouscripteurStats = async () => {
 
 
 
+export const fetchSouscripteurStatsDr = async (id) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    console.warn("No token found");
+    return null;
+  }
+
+  // Assuming `base` contains the base URL
+  const url = `${base}/souscripteurs/stats/${id}`;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.status === 401) {
+      handleLogout();
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Error fetching stats");
+    }
+
+    return data.stats; // Return only the stats object
+
+  } catch (error) {
+    console.error("Error fetching souscripteur stats:", error);
+    return null;
+  }
+};
+
+
+
+
 export const fetchDossiersTraitesParJour = async () => {
   const token = localStorage.getItem("token");
 
@@ -282,6 +323,42 @@ export const fetchDossiersTraitesParJour = async () => {
   }
 
   const url = `${base}/souscripteurs/stats/traite-par-jour`;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.status === 401) {
+      handleLogout();
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Erreur lors de la récupération des données de traitement par jour");
+    }
+
+    return data.data || []; // assuming { success: true, data: [...] }
+  } catch (error) {
+    console.error("Erreur fetchDossiersTraitesParJour:", error);
+    return [];
+  }
+};
+
+export const fetchDossiersTraitesParJourDr = async (id) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    console.warn("No token found");
+    return null;
+  }
+
+  const url = `${base}/souscripteurs/stats/traite-par-jour/${id}`;
 
   try {
     const response = await fetch(url, {

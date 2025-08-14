@@ -75,7 +75,7 @@ const userDr = localStorage.getItem('userDr');
         
         let data;
   
-        if (userRole === 'admin') {
+        if (userRole === 'admin' || userRole === 'DG') {
           data = await fetchUserSessions();
         } else if (userRole === 'membre'){
           data = await fetchUserSessionsDr();
@@ -92,12 +92,19 @@ const userDr = localStorage.getItem('userDr');
     fetchData();
   }, []);
   
-
+  
+  const filteredUsers = users.filter((user) => {
+    const displayRole = user.role === 'membre' ? 'president' : user.role;
+    const searchString = `${user.name || ''} ${displayRole || ''} ${user.dr || ''} ${user.affectation || ''}`.toLowerCase();
+    return searchString.includes(search.toLowerCase());
+  });
+  
+/*
   const filteredUsers = users.filter((user) => {
     const searchString = `${user.name || ''} ${user.role || ''} ${user.dr || ''} ${user.affectation || ''}`.toLowerCase();
     return searchString.includes(search.toLowerCase());
   });
-
+*/
   const handleChange = (e) => {
     const { name, value } = e.target;
     setNewUser((prev) => ({
@@ -161,9 +168,12 @@ const userDr = localStorage.getItem('userDr');
         <CCardBody>
           <div className="d-flex justify-content-between align-items-center mb-3">
             <CCardTitle className="mb-0">Sessions Utilisateurs</CCardTitle>
+
+            { (userRole === 'admin' || userRole === 'membre') &&
             <CButton color="primary" onClick={() => setShowAddModal(true)}>
               + Ajouter Utilisateur
             </CButton>
+}
           </div>
 
           <CFormInput
@@ -197,11 +207,24 @@ const userDr = localStorage.getItem('userDr');
                     filteredUsers.map((user) => (
                       <CTableRow key={user.id} className="table-row-hover">
                         <CTableDataCell style={{ width: '5%' }}>
-                          <FaCircle
-                            color={user.status === 'online' ? 'green' : 'red'}
-                            title={user.status}
-                            style={{ fontSize: '0.9rem' }}
-                          />
+                        
+                        {(() => {
+  const lastLogin = user.last_login ? new Date(user.last_login) : null;
+  const now = new Date();
+  const sixHours = 6 * 60 * 60 * 1000;
+  const isActive = user.status === 'online' && lastLogin && (now - lastLogin) <= sixHours;
+
+  return (
+    <FaCircle
+      color={isActive ? 'green' : 'red'}
+      title={isActive ? 'online' : 'offline'}
+      style={{ fontSize: '0.9rem' }}
+    />
+  );
+})()}
+
+
+
                         </CTableDataCell>
                         <CTableDataCell>{user.name || '-'}</CTableDataCell>
                         <CTableDataCell>
@@ -248,6 +271,7 @@ const userDr = localStorage.getItem('userDr');
   ) : (
     <div className="d-flex align-items-center justify-content-between">
       <span>{user.affectation_recours || '-'}</span>
+      {(userRole === 'admin' || userRole === 'membre') &&
       <CButton
         color="warning"
         size="sm"
@@ -257,7 +281,7 @@ const userDr = localStorage.getItem('userDr');
         }}
       >
         Modifier
-      </CButton>
+      </CButton> }
     </div>
   )}
 </CTableDataCell>

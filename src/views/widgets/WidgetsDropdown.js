@@ -12,11 +12,15 @@ import { CChartBar } from '@coreui/react-chartjs'
 import {
   fetchSouscripteurStats,
   fetchDossiersTraitesParJour,
+  fetchSouscripteurStatsDr,
+  fetchDossiersTraitesParJourDr
 } from '../../../api/souscripteurs'
 
 const WidgetsDropdown = () => {
 
   const userRole = localStorage.getItem('userRole')
+
+  const userDr = localStorage.getItem('userDr');
 
   // ⛔️ Ne rien afficher pour le rôle "cadre_commercial"
   if (userRole === 'cadre_commercial') {
@@ -32,7 +36,20 @@ const WidgetsDropdown = () => {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const statsData = await fetchSouscripteurStats()
+    
+
+        let statsData;
+
+        if (userRole === 'membre') {
+        
+          statsData = await fetchSouscripteurStatsDr(userDr); // Pass userdr here
+        } else {
+          
+          statsData = await fetchSouscripteurStats();
+        }
+     
+
+       // const statsData = await fetchSouscripteurStats()
         setStats(statsData)
       } catch (error) {
         console.error('Erreur lors du chargement des statistiques :', error)
@@ -47,7 +64,23 @@ const WidgetsDropdown = () => {
   const handleShowChart = async () => {
     setLoadingChart(true)
     try {
-      const dailyData = await fetchDossiersTraitesParJour()
+
+      let dailyData;
+
+      // Conditionally fetch data based on user role
+      if (userRole === 'membre') {
+      
+        dailyData = await fetchDossiersTraitesParJourDr(userDr);  // Pass userdr here
+      } else {
+       
+        dailyData = await fetchDossiersTraitesParJour();
+      }
+
+
+
+
+
+     // const dailyData = await fetchDossiersTraitesParJour()
       setDailyTraites(dailyData || [])
       setShowChart(true)
     } catch (error) {

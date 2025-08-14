@@ -47,7 +47,7 @@ const getNavItems = () => {
     });
   }
 
-  if (userRole === 'membre' || userRole === 'admin'  ) {
+  if (userRole === 'membre' || userRole === 'admin' || userRole === 'DG'  ) {
     nav.push({
       component: CNavItem,
       name: 'utilisateurs',
