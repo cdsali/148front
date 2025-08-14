@@ -15,7 +15,7 @@ const testdoc=React.lazy(() => import('./views/traitement/TestDoc'))
 const traite=React.lazy(() => import('./views/traitement/traite'))
 const sous_membre=React.lazy(() => import('./views/traitement/sous_details_membre'))
 const session=React.lazy(() => import('./views/traitement/session'))
-
+const pss=React.lazy(() => import('./views/traitement/password'))
 const routes = [
   { path: '/login', exact: true, name: 'Login' },
   { path: '/', exact: true, name: 'Login' },
@@ -31,6 +31,7 @@ const routes = [
  { path: '/test-doc', exact: true, name: 'sous details', element: testdoc},
  { path: '/liste_traite', exact: true, name: 'liste traite', element: traite},
  { path: '/session', exact: true, name: 'sessions', element: session},
+ { path: '/password', exact: true, name: 'passworrd', element: pss},
 ]
 
 export default routes

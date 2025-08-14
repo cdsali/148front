@@ -1,3 +1,4 @@
+
 import React from 'react'
 import {
   CAvatar,
@@ -19,8 +20,19 @@ import { useNavigate } from 'react-router-dom'
 import avatar8 from './../../assets/images/avatars/8.jpg'
 import { handleLogout } from "../../../api/utils";
 
+
+
+
+
 const AppHeaderDropdown = () => {
   const navigate = useNavigate()
+
+
+   
+
+  const goToSettings = () => {
+    navigate('/password') 
+  }
 
 
   return (
@@ -35,7 +47,7 @@ const AppHeaderDropdown = () => {
           Profile
         </CDropdownItem>
         
-        <CDropdownItem href="#">
+        <CDropdownItem   onClick={goToSettings}>
           <CIcon icon={cilSettings} className="me-2" />
           Settings
         </CDropdownItem>

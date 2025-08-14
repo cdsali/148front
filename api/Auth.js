@@ -158,3 +158,35 @@ export const login = async (username, password) => {
       throw new Error(error.message || 'Une erreur est survenue. Veuillez réessayer.');
     }
   };
+
+
+  
+  export const updatePassword = async (newPassword) => {
+    try {
+      const token = localStorage.getItem("token");
+  
+      if (!token) {
+        throw new Error("Vous devez être connecté pour changer le mot de passe.");
+      }
+  
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/user/update-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ newPassword }),
+      });
+  
+      const data = await response.json();
+  
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Erreur lors de la mise à jour du mot de passe');
+      }
+  
+      return data.message; // Return success message
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du mot de passe:', error);
+      throw new Error(error.message || 'Une erreur est survenue. Veuillez réessayer.');
+    }
+  };
