@@ -40,12 +40,13 @@ const WidgetsDropdown = () => {
 
         let statsData;
 
-        if (userRole === 'membre') {
-        
-          statsData = await fetchSouscripteurStatsDr(userDr); // Pass userdr here
-        } else {
-          
+        if (userRole === 'admin' || userRole===  'DG' ) {
           statsData = await fetchSouscripteurStats();
+        
+         
+        } else {
+          statsData = await fetchSouscripteurStatsDr(userDr); // Pass userdr here
+          
         }
      
 
@@ -60,27 +61,28 @@ const WidgetsDropdown = () => {
 
     loadStats()
   }, [])
-
+/*
   const handleShowChart = async () => {
     setLoadingChart(true)
     try {
 
-      let dailyData;
+      //let dailyData;
 
       // Conditionally fetch data based on user role
-      if (userRole === 'membre') {
+    //  if (userRole === 'membre') {
       
-        dailyData = await fetchDossiersTraitesParJourDr(userDr);  // Pass userdr here
-      } else {
+      //  dailyData = await fetchDossiersTraitesParJourDr(6);  // Pass userdr here
+     // } else {
        
-        dailyData = await fetchDossiersTraitesParJour();
-      }
+     // dailyData = await fetchDossiersTraitesParJour();
+     // }
 
 
 
 
 
-     // const dailyData = await fetchDossiersTraitesParJour()
+      const dailyData = await fetchDossiersTraitesParJour();
+      console.log(dailyData);
       setDailyTraites(dailyData || [])
       setShowChart(true)
     } catch (error) {
@@ -89,6 +91,30 @@ const WidgetsDropdown = () => {
       setLoadingChart(false)
     }
   }
+*/
+
+
+const handleShowChart = async () => {
+  setLoadingChart(true);
+  try {
+    let dailyData;
+
+    if (userRole === 'membre') {
+      dailyData = await fetchDossiersTraitesParJourDr(userDr); // Fetch for a specific "userDr"
+    } else {
+      dailyData = await fetchDossiersTraitesParJour(); // For other roles
+    }
+
+    console.log(dailyData);
+    setDailyTraites(dailyData || []);
+    setShowChart(true);
+  } catch (error) {
+    console.error('Erreur lors du chargement des données par jour :', error);
+  } finally {
+    setLoadingChart(false);
+  }
+};
+
 
   const statItems = [
     { label: 'Total', value: stats?.total, color: 'primary' },
@@ -119,7 +145,7 @@ const WidgetsDropdown = () => {
           <CCard className="shadow-sm rounded-3 card-shadow">
             <CCardBody>
               <CCardTitle className="mb-4 text-center fs-4 fw-bold">
-                 Statistiques des souscripteurs
+                 Statistiques des souscripteurs 
               </CCardTitle>
               {loadingStats ? (
                 <div className="text-center py-5">
@@ -131,7 +157,7 @@ const WidgetsDropdown = () => {
                     <CCol key={index} xs={6} md={4} className="mb-4">
                       <h6 className="text-muted">{item.label}</h6>
                       <div className={`fs-3 fw-semibold text-${item.color}`}>
-                        {item.value ?? 0}
+                        {item.value ?? '↻'}
                       </div>
                     </CCol>
                   ))}

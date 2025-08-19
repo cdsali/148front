@@ -169,7 +169,7 @@ const userDr = localStorage.getItem('userDr');
           <div className="d-flex justify-content-between align-items-center mb-3">
             <CCardTitle className="mb-0">Sessions Utilisateurs</CCardTitle>
 
-            { (userRole === 'admin' || userRole === 'membre') &&
+            { (userRole === 'admin') &&
             <CButton color="primary" onClick={() => setShowAddModal(true)}>
               + Ajouter Utilisateur
             </CButton>
@@ -200,6 +200,7 @@ const userDr = localStorage.getItem('userDr');
                     <CTableHeaderCell>Affectation recours</CTableHeaderCell>
                     <CTableHeaderCell>Dernière connexion</CTableHeaderCell>
                     <CTableHeaderCell>Dernière déconnexion</CTableHeaderCell>
+                    <CTableHeaderCell>traitement</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
@@ -288,6 +289,7 @@ const userDr = localStorage.getItem('userDr');
 
                         <CTableDataCell>{user.last_login ?? '-'}</CTableDataCell>
                         <CTableDataCell>{user.last_logout ?? '-'}</CTableDataCell>
+                        <CTableDataCell>{user.role==='cadre_commercial' && user.count_traite}</CTableDataCell>
                       </CTableRow>
                     ))
                   ) : (

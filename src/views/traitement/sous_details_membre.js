@@ -644,6 +644,21 @@ const openDocument = async (relativePath,isRecour, label) => {
       newTab.location.href = url;
     }*/
 
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+       
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.click();
+        return; 
+      }
+
+
+
+
     // Update state/UI
     setCurrentDoc(url);
     setModalVisible(true);
@@ -662,9 +677,9 @@ const openDocument = async (relativePath,isRecour, label) => {
 
   } catch (err) {
     // Close the new tab if fetch fails
-    if (newTab) {
+ /*   if (newTab) {
       newTab.close();
-    }
+    }*/
 
     setAlertProps({
       type: "error",

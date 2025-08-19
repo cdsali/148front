@@ -282,7 +282,7 @@ export const fetchSouscripteurStatsDr = async (id) => {
   }
 
   // Assuming `base` contains the base URL
-  const url = `${base}/souscripteurs/stats/${id}`;
+  const url = `${base}/souscripteurs/statsDr/${id}`;
 
   try {
     const response = await fetch(url, {
@@ -322,7 +322,7 @@ export const fetchDossiersTraitesParJour = async () => {
     return null;
   }
 
-  const url = `${base}/souscripteurs/stats/traite-par-jour`;
+  const url = `${base}/souscripteurs/stats/traite-par-jour10`;
 
   try {
     const response = await fetch(url, {
