@@ -7,7 +7,7 @@ import {
 import CIcon from '@coreui/icons-react';
 import { cilArrowLeft, cilZoomIn, cilZoomOut, cilX, cilFullscreen, cifZw } from '@coreui/icons';
 import '../../scss/styleC.css';
-import { fetchdSouscripteurById,fetchInsertDossierReview ,fetchMarkDossierConforme,fetchMarkDossierExamined,fetchInsertAddress} from '../../../api/souscripteurs';
+import { fetchdSouscripteurById,fetchInsertDossierReview ,fetchMarkDossierConforme,fetchMarkDossierExamined,fetchInsertAddress,fetchUpdateEnfant} from '../../../api/souscripteurs';
 import { fetchMarkAssignmentCompleted } from '../../../api/assign_agent';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min?url';
@@ -300,6 +300,47 @@ const [documentStatus, setDocumentStatus] = useState({
   "Fiche de paie (conjoint)": { vu: 0, examined: 0, conforme: 0 },
   "Recours": { vu: 0, examined: 0, conforme: 0 },
 });
+
+
+
+
+
+const [nbrEnfantInput, setNbrEnfantInput] = useState( 0);
+
+const [isUpdating, setIsUpdating] = useState(false);
+const [updateDisabled, setUpdateDisabled] = useState(false);
+
+
+const handleUpdateEnfantByCode = async (code) => {
+  setIsUpdating(true);
+
+  try {
+    const response = await fetchUpdateEnfant(code, nbrEnfantInput);
+
+    if (response?.success) {
+      alert("Nombre d'enfants mis à jour avec succès !");
+
+  
+
+     
+      setUpdateDisabled(true);
+    } else {
+      alert(response?.message || "Échec de la mise à jour.");
+    }
+  } catch (error) {
+    console.error("Erreur handleUpdateEnfantByCode:", error);
+    alert("Erreur serveur lors de la mise à jour.");
+  } finally {
+    setIsUpdating(false);
+  }
+};
+
+
+
+
+
+
+
 
 
 const calculateExaminedCount = useCallback(() => {
@@ -740,6 +781,28 @@ const handleFavorableClick = async () => {
               <p><strong>Nom et prénom (ar): </strong><br />{souscripteur.nomAr} {souscripteur.prenomAr}</p>
               <p><strong>Date de naissance: </strong> {souscripteur.date_nais}</p>
               <p><strong>Nombre d'enfants: </strong> {souscripteur.nbr_enfant}</p>
+              <div className="d-flex align-items-center gap-2 mb-2">
+  <input
+    type="number"
+    className="form-control form-control-sm"
+    value={nbrEnfantInput}
+    onChange={(e) => {
+      setNbrEnfantInput(Number(e.target.value));
+      setUpdateDisabled(false); 
+    }}
+    style={{ maxWidth: "100px" }}
+
+    disabled={isUpdating || updateDisabled }
+  />
+  <button
+    className="btn btn-sm btn-primary"
+    onClick={() => handleUpdateEnfantByCode(souscripteur.code)}
+    disabled={isUpdating || updateDisabled }
+  >
+    {isUpdating ? 'Mise à jour...' : 'modifier'}
+  </button>
+</div>
+
               <p><strong>Wilaya de souscription: </strong> {souscripteur.wilaya}</p>
               <p><strong>Situation Familiale: </strong> {souscripteur.situation}</p>
               <p><strong>Parents: </strong>{souscripteur.prenom_pere_fr}/{souscripteur.nom_mere_fr} {souscripteur.prenom_mere_fr}</p>

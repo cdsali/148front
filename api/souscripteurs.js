@@ -625,3 +625,43 @@ export const fetchValidationsBySous = async (souscripteur_id) => {
     return null;
   }
 };
+
+
+
+
+
+export const fetchUpdateEnfant = async (code, nbr_enfant) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    console.warn("No token found");
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${base}/souscripteurs/update-enfants`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ code, nbr_enfant }),
+    });
+
+    if (response.status === 401) {
+      handleLogout();
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Erreur lors de la mise à jour du nombre d'enfants");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Erreur fetchUpdateEnfant:", error);
+    return null;
+  }
+};

@@ -230,7 +230,7 @@ const ValidationsPage = () => {
     <div className="p-3">
       <div className="d-flex justify-content-end mb-3">
         <CButton color="secondary" size="sm" onClick={handleGeneratePvPdf}>
-          Générer PV PDF
+          Générer PV totale
         </CButton>
       </div>
 
