@@ -35,16 +35,14 @@ const ValidationsPage = () => {
 
   const navigate = useNavigate();
 
-  // Optimized Data Fetching
-  const loadData = async (type, cursor = null, isNext = true,bol=false) => {
+  const loadData = async (type, cursor = null, isNext = true, bol = false) => {
     setLoading(false);
-  
 
     try {
       const result = await fetchValidationsPaginated({
         decision: type,
         userDr,
-        observation_cadre: bol, 
+        observation_cadre: bol,
         limit: ITEMS_PER_PAGE,
         lastId: cursor,
       });
@@ -53,13 +51,11 @@ const ValidationsPage = () => {
         setValidations(result);
         setHasNextPage(result.length === ITEMS_PER_PAGE);
 
-        // For next, store current lastId in stack
         if (isNext && result.length > 0) {
           setPrevStack((prev) => [...prev, cursor]);
           setLastId(result[result.length - 1].id_souscripteur);
         }
 
-        // For prev, set lastId to second last in stack
         if (!isNext) {
           setLastId(cursor);
           setPrevStack((prev) => prev.slice(0, -1));
@@ -76,31 +72,23 @@ const ValidationsPage = () => {
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
     if (decisionType) {
+      let dec = decisionType;
+      let bol = false;
+      if (decisionType === 'rejeteo') {
+        dec = 'rejete';
+        bol = true;
+      } else if (decisionType === 'completeo') {
+        dec = 'complete';
+        bol = true;
+      }
 
-           let dec=decisionType;
-  let bol=false;
-      if (decisionType == "rejeteo") {
-        dec = "rejete";
-        bol=true;
-         
-      } else if (decisionType == "completeo") {
-        dec = "complete";
-        bol=true;
-      } 
-
-    /*  setValidations([]);
-      setSelectedRows([]);
-      setLastId(null);
-      setPrevStack([]);*/
-    
-      loadData(dec, null, true,bol);
+      loadData(dec, null, true, bol);
     }
   }, [decisionType]);
 
-  // Handle next and previous pagination
   const handleNext = () => {
     if (pagination.hasNextPage) {
       loadData(decisionType, pagination.lastId);
@@ -108,7 +96,6 @@ const ValidationsPage = () => {
   };
 
   const handlePrev = () => {
-    // No prev-stack needed if we manage the lastId directly
     setPagination((prev) => ({ ...prev, lastId: prev.lastId - ITEMS_PER_PAGE }));
     loadData(decisionType, pagination.lastId);
   };
@@ -123,7 +110,6 @@ const ValidationsPage = () => {
     );
   };
 
-  // Generate PV PDF with pagination
   const handleGeneratePvPdf = async () => {
     const nomuser = localStorage.getItem('userName') || 'Utilisateur inconnu';
     setLoading(true);
@@ -138,7 +124,6 @@ const ValidationsPage = () => {
       const marginLeft = 20;
       let currentY = 20;
 
-      // Title and user info
       doc.setFontSize(16).setFont('helvetica', 'bold').text('PV', marginLeft, currentY);
       const now = new Date();
       const formattedDateTime = now.toLocaleString('fr-FR', {
@@ -152,7 +137,6 @@ const ValidationsPage = () => {
       currentY += 8;
       doc.text(`Généré par : ${nomuser}`, marginLeft, currentY);
 
-      // Table
       currentY += 15;
       autoTable(doc, {
         startY: currentY,
@@ -189,7 +173,6 @@ const ValidationsPage = () => {
         margin: { left: marginLeft, right: 10 },
       });
 
-      // Statistics
       const stats = pvData.reduce((acc, item) => {
         const decision = item.decision || 'Non spécifié';
         acc[decision] = (acc[decision] || 0) + 1;
@@ -203,7 +186,6 @@ const ValidationsPage = () => {
         lineOffset += 6;
       });
 
-      // Save the document
       doc.save('pv-validations.pdf');
     } catch (error) {
       console.error('Erreur lors de la génération du PV PDF:', error);
@@ -217,7 +199,45 @@ const ValidationsPage = () => {
     setDecisionType(type);
   };
 
-  // Memoize stats for performance
+  const handleValider = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Token manquant, veuillez vous reconnecter.');
+      return;
+    }
+  
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const agentId = payload?.userId;
+    if (!agentId) {
+      alert("Impossible d'identifier l'utilisateur");
+      return;
+    }
+  
+    if (selectedRows.length === 0) {
+      alert('Aucun souscripteur sélectionné.');
+      return;
+    }
+  
+    const decisionsArray = selectedRows.map(id => ({
+      souscripteurId: id,
+      agentId,
+      decision: 'valide',
+      motif: null,
+      observation: null
+    }));
+  
+    const res = await postBulkValidations(decisionsArray);
+  
+    if (res?.success) {
+      alert('Validations enregistrées.');
+    
+      setValidations((prev) => prev.filter((v) => !selectedRows.includes(v.id_souscripteur)));
+      setSelectedRows([]);
+    } else {
+      alert('Erreur lors de la validation.');
+    }
+  };
+
   const stats = useMemo(() => {
     return validations.reduce((acc, item) => {
       const decision = item.decision || 'Non spécifié';
@@ -250,8 +270,6 @@ const ValidationsPage = () => {
           >
             Défavorables
           </CButton>
-
-
           <CButton
             size="sm"
             color={decisionType === 'rejeteo' ? 'danger' : 'light'}
@@ -259,7 +277,6 @@ const ValidationsPage = () => {
           >
             Défavorables observation
           </CButton>
-
           <CButton
             size="sm"
             color={decisionType === 'complete' ? 'warning' : 'light'}
@@ -267,7 +284,6 @@ const ValidationsPage = () => {
           >
             Completer
           </CButton>
-
           <CButton
             size="sm"
             color={decisionType === 'completeo' ? 'warning' : 'light'}
@@ -277,7 +293,6 @@ const ValidationsPage = () => {
           </CButton>
         </CCol>
       </CRow>
-
 
       <CCard>
         <CCardBody>
@@ -297,7 +312,7 @@ const ValidationsPage = () => {
           ) : (
             <>
               <div className="overflow-x-auto">
-              <CTable small striped hover className="text-center align-middle">
+                <CTable small striped hover className="text-center align-middle">
                   <CTableHead>
                     <CTableRow className="bg-dark text-white">
                       <CTableHeaderCell>
@@ -387,6 +402,14 @@ const ValidationsPage = () => {
                   </div>
                 ))}
               </div>
+
+              {selectedRows.length > 0 && (
+                <div className="text-center mt-3">
+                  <CButton color="primary" size="sm" onClick={handleValider}>
+                    Valider la sélection ({selectedRows.length})
+                  </CButton>
+                </div>
+              )}
             </>
           )}
         </CCardBody>
@@ -396,3 +419,7 @@ const ValidationsPage = () => {
 };
 
 export default ValidationsPage;
+
+
+
+
