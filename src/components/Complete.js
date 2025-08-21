@@ -42,7 +42,14 @@ export default function RejectModal({ isOpen, onClose, souscripteurId, onSuccess
     { code: "F7", text_fr: "Le postulant n’a pas soumis l'acte de mariage.", text_ar: "المتقدم لم يقدم عقد الزواج." },
     { code: "F8", text_fr: "Le postulant n’a pas fourni une carte d'identité valide.", text_ar: "المتقدم لم يقدم بطاقة هوية صالحة." },
     { code: "F9", text_fr: "Le conjoint du postulant n’a pas soumis la fiche de paie.", text_ar: "الزوج لم يقدم قسيمة الدفع المطلوبة." },
-    { code: "F10", text_fr: "Le postulant a fait un recours mais n’a pas fourni de documents justificatifs.", text_ar: "المتقدم قدم طعنًا ولكن لم يقدم مستندات داعمة." }
+    { code: "F10", text_fr: "Le postulant a fait un recours mais n’a pas fourni de documents justificatifs.", text_ar: "المتقدم قدم طعنًا ولكن لم يقدم مستندات داعمة." },
+
+    { code: "G1", text_fr: "Salaire supérieur à 120 000 DA", text_ar: "الأجر يفوق 120,000 دج." },
+    { code: "G2", text_fr: "Salaire égal ou inférieur à 24 000 DA", text_ar: "الأجر يساوي أو يقل عن 24,000 دج." },
+    { code: "G3", text_fr: "Manque affiliation CNAS/CASNOS", text_ar: "غياب الانخراط في CNAS/CASNOS." },
+    { code: "G4", text_fr: "Favorable sous réserve de restitution des clés à l’organisme bailleur", text_ar: "مقبول بشرط إرجاع المفاتيح إلى الهيئة المالكة." }
+
+
   ];
   
 

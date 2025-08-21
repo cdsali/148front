@@ -644,6 +644,8 @@ const openDocument = async (relativePath,isRecour, label) => {
       newTab.location.href = url;
     }*/
 
+
+      
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (isMobile) {
@@ -653,7 +655,7 @@ const openDocument = async (relativePath,isRecour, label) => {
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
         link.click();
-        return; 
+       // return; 
       }
 
 
@@ -661,7 +663,7 @@ const openDocument = async (relativePath,isRecour, label) => {
 
     // Update state/UI
     setCurrentDoc(url);
-    setModalVisible(true);
+    if (isMobile==false)  setModalVisible(true);
     setTranslate({ x: 0, y: 0 });
 
     updateDocumentStatus(label, { vu: 1 });

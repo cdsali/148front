@@ -1,6 +1,21 @@
  {
   "regions": [
     {
+      "code": 0,
+      "name": "DG",
+      "wilayas": [
+        { "code": "12", "name": "Tebessa" },
+        { "code": "21", "name": "Skikda" },
+        { "code": "23", "name": "Annaba" },
+        { "code": "24", "name": "Guelma" },
+        { "code": "36", "name": "El Tarf" },
+        { "code": "41", "name": "Souk Ahras" }
+      ]
+    },
+
+
+
+    {
       "code": 1,
       "name": "Oran",
       "wilayas": [

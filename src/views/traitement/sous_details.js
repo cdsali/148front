@@ -674,13 +674,13 @@ const bb=buildCustomDocumentPath(relativePath,label);
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
         link.click();
-        return; 
+       // return; 
       }
 
 
     // Update state/UI
     setCurrentDoc(url);
-    setModalVisible(true);
+    if (isMobile==false) setModalVisible(true);
     setTranslate({ x: 0, y: 0 });
 
     updateDocumentStatus(label, { vu: 1 });
@@ -1115,7 +1115,8 @@ const handleFavorableClick = async () => {
         <CButton color="success" style={{marginRight:"5px"}} onClick={handleFavorableClick}>
           Favorable
         </CButton>
-      )}
+      )
+     }
         <CButton color="danger" onClick={openRejectModal}>❌ Rejeter</CButton>
 
        
