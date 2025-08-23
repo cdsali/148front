@@ -630,9 +630,9 @@ const openDocument = async (relativePath,isRecour, label) => {
       .map(encodeURIComponent)
       .join('/');
 
-   
+const urlf=   `http://192.168.0.148:3602/souscripteurs/test-doc/${encodedPath}?isrecour=${isRecour}`;
 
-    const response = await fetch(`http://192.168.0.148:3602/souscripteurs/test-doc/${encodedPath}?isrecour=${isRecour}`);
+    const response = await fetch(urlf);
 
     if (!response.ok) throw new Error('Failed to load document');
 
@@ -645,6 +645,7 @@ const openDocument = async (relativePath,isRecour, label) => {
     }*/
 
 
+      /*
       
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
@@ -657,15 +658,26 @@ const openDocument = async (relativePath,isRecour, label) => {
         link.click();
        // return; 
       }
+*/
+
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // Directly open the file URL in a new tab (no blob)
+      window.open(urlf, '_blank');
+      //return;
+    }
+
 
 
 
 
     // Update state/UI
+    if (isMobile==false) {
     setCurrentDoc(url);
-    if (isMobile==false)  setModalVisible(true);
+     setModalVisible(true);
     setTranslate({ x: 0, y: 0 });
-
+    }
     updateDocumentStatus(label, { vu: 1 });
 
     const dossierType = mapLabelToDossierType[label];
