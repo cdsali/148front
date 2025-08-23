@@ -660,7 +660,9 @@ const urlf=   `http://192.168.0.148:3602/souscripteurs/test-doc/${encodedPath}?i
       }
 */
 
-const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+//const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     if (isMobile) {
       // Directly open the file URL in a new tab (no blob)

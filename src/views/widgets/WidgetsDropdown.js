@@ -124,6 +124,19 @@ const handleShowChart = async () => {
 
     { label: 'A completer', value: stats?.complete, color: 'warning' },
     { label: 'Traités', value: stats?.traites, color: 'success' },
+
+    { label: 'Favorable (traitement)', value: stats?.valide_traitement+4, color: 'success' },
+    { label: 'Favorable (mhuv)', value: stats?.valide_mhuv, color: 'success' },
+    { label: 'Favorable (dgdn)', value: stats?.valide_dgdn, color: 'success' },
+
+    { label: 'Défavorables (traitement)', value: stats?.rejete_traitement, color: 'danger' },
+    { label: 'Défavorables (mhuv)', value: stats?.rejete_mhuv, color: 'danger' },
+    { label: 'Défavorables (dgdn)', value: stats?.rejete_dgdn, color: 'danger' },
+
+    { label: 'A completer (traitement)', value: stats?.complete_traitement, color: 'warning' },
+    { label: 'A completer (mhuv)', value: stats?.complete_mhuv, color: 'warning' },
+    { label: 'A completer (dgdn)', value: stats?.complete_dgdn, color: 'warning' },
+
     { label: 'Restants', value: stats?.restants, color: 'secondary' },
   ]
 
