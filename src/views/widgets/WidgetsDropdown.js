@@ -116,7 +116,7 @@ const handleShowChart = async () => {
 };
 
 
-  const statItems = [
+  const allItems = [
     { label: 'Total', value: stats?.total, color: 'primary' },
     { label: 'Assignés', value: stats?.assigned, color: 'info' },
     { label: 'Favorables', value: stats?.favorable, color: 'success' },
@@ -124,6 +124,8 @@ const handleShowChart = async () => {
 
     { label: 'A completer', value: stats?.complete, color: 'warning' },
     { label: 'Traités', value: stats?.traites, color: 'success' },
+    { label: 'Assigné a traiter', value: stats?.assigned-stats?.traites, color: 'secondary' },
+
 
     { label: 'Favorable (traitement)', value: stats?.valide_traitement+4, color: 'success' },
     { label: 'Favorable (mhuv)', value: stats?.valide_mhuv, color: 'success' },
@@ -137,8 +139,15 @@ const handleShowChart = async () => {
     { label: 'A completer (mhuv)', value: stats?.complete_mhuv, color: 'warning' },
     { label: 'A completer (dgdn)', value: stats?.complete_dgdn, color: 'warning' },
 
+
     { label: 'Restants', value: stats?.restants, color: 'secondary' },
+
   ]
+
+  const statItems = userRole === 'membre'
+  ? allItems.slice(0, 7) 
+  : allItems; 
+
 
   const chartLabels = dailyTraites.map((item) =>
     new Date(item.jour).toLocaleDateString('fr-FR', {
