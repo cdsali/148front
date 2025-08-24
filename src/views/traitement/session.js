@@ -21,25 +21,25 @@ import {
   CFormSelect,
 } from '@coreui/react';
 import { FaCircle } from 'react-icons/fa';
-import { fetchUserSessions,fetchUserSessionsDr, createUser,updateUserAffectationRecours } from '../../../api/Auth';
-
-import data from '../../data/regions.json'; 
+import { fetchUserSessions, fetchUserSessionsDr, createUser, updateUserAffectationRecours } from '../../../api/Auth';
+import data from '../../data/regions.json';
 
 const regions = data.regions;
+
 const UserSessionsPage = () => {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-
   const [editingUserId, setEditingUserId] = useState(null);
-const [newAffectationRecours, setNewAffectationRecours] = useState('traitement');
+  const [newAffectationRecours, setNewAffectationRecours] = useState('traitement');
 
-const userRole= localStorage.getItem('userRole');
-const userDr = localStorage.getItem('userDr');
+  const userRole = localStorage.getItem('userRole');
+  const userDr = localStorage.getItem('userDr');
 
+  const [selectedDate, setSelectedDate] = useState('');
+  const [isTotal, setIsTotal] = useState(true);
 
   const [newUser, setNewUser] = useState({
     name: '',
@@ -47,40 +47,25 @@ const userDr = localStorage.getItem('userDr');
     password: '',
     fonction: '',
     affectation: '',
-    
     role: userRole === 'membre' ? 'cadre_commercial' : '',
     dr: userRole === 'membre' ? userDr : '',
-    affectation_recours: 'traitement', 
+    affectation_recours: 'traitement',
   });
-/*
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await fetchUserSessions();
-        console.log(data);
-        setUsers(data || []);
-      } catch (error) {
-        console.error('Erreur lors du chargement des sessions:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);*/
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        
+        const filters = {
+          date: isTotal ? null : selectedDate,
+        };
+
         let data;
-  
         if (userRole === 'admin' || userRole === 'DG') {
-          data = await fetchUserSessions();
-        } else if (userRole === 'membre'){
-          data = await fetchUserSessionsDr();
+          data = await fetchUserSessions(filters);
+        } else if (userRole === 'membre') {
+          data = await fetchUserSessionsDr(filters);
         }
-  
+
         setUsers(data || []);
       } catch (error) {
         console.error('Erreur lors du chargement des sessions:', error);
@@ -88,55 +73,39 @@ const userDr = localStorage.getItem('userDr');
         setLoading(false);
       }
     };
-  
+
     fetchData();
-  }, []);
-  
-  
+  }, [selectedDate, isTotal]);
+
   const filteredUsers = users.filter((user) => {
     const displayRole = user.role === 'membre' ? 'president' : user.role;
     const searchString = `${user.name || ''} ${displayRole || ''} ${user.dr || ''} ${user.affectation || ''}`.toLowerCase();
     return searchString.includes(search.toLowerCase());
   });
-  
-/*
-  const filteredUsers = users.filter((user) => {
-    const searchString = `${user.name || ''} ${user.role || ''} ${user.dr || ''} ${user.affectation || ''}`.toLowerCase();
-    return searchString.includes(search.toLowerCase());
-  });
-*/
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setNewUser((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setNewUser((prev) => ({ ...prev, [name]: value }));
   };
-
 
   const handleUpdateAffectationRecours = async (userId) => {
     try {
       await updateUserAffectationRecours(userId, newAffectationRecours);
-  
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
           user.id === userId ? { ...user, affectation_recours: newAffectationRecours } : user
         )
       );
-  
       setEditingUserId(null);
-      setNewAffectationRecours('');
+      setNewAffectationRecours('traitement');
     } catch (error) {
       alert('Erreur lors de la mise à jour : ' + error.message);
-      console.error(error);
     }
   };
-  
 
   const handleAddUser = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-
     try {
       const createdUser = await createUser(newUser);
       setUsers((prev) => [...prev, createdUser]);
@@ -147,12 +116,9 @@ const userDr = localStorage.getItem('userDr');
         password: '',
         fonction: '',
         affectation: '',
-     
-     
-    role: userRole === 'membre' ? 'cadre_commercial' : '',
-    dr: userRole === 'membre' ? userDr : '',
-
-        affectation_recours:'traitement'
+        role: userRole === 'membre' ? 'cadre_commercial' : '',
+        dr: userRole === 'membre' ? userDr : '',
+        affectation_recours: 'traitement',
       });
     } catch (err) {
       console.error(err);
@@ -167,13 +133,11 @@ const userDr = localStorage.getItem('userDr');
       <CCard>
         <CCardBody>
           <div className="d-flex justify-content-between align-items-center mb-3">
-            <CCardTitle className="mb-0">Sessions Utilisateurs</CCardTitle>
-
-            { (userRole === 'admin') &&
-            <CButton color="primary" onClick={() => setShowAddModal(true)}>
-              + Ajouter Utilisateur
-            </CButton>
-}
+            <CCardTitle className="mb-0">Utilisateurs</CCardTitle>
+            {(userRole === 'admin') &&
+              <CButton color="primary" onClick={() => setShowAddModal(true)}>
+                + Ajouter Utilisateur
+              </CButton>}
           </div>
 
           <CFormInput
@@ -182,6 +146,31 @@ const userDr = localStorage.getItem('userDr');
             onChange={(e) => setSearch(e.target.value)}
             className="shadow-sm mb-3"
           />
+
+          <div className="d-flex align-items-center gap-3 mb-3">
+            <div>
+              <label htmlFor="dateFilter" className="form-label mb-1">Filtrer par date</label>
+              <CFormInput
+                type="date"
+                id="dateFilter"
+                value={selectedDate}
+                disabled={isTotal}
+                onChange={(e) => setSelectedDate(e.target.value)}
+              />
+            </div>
+            <div className="form-check mt-4">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="totalCheck"
+                checked={isTotal}
+                onChange={(e) => setIsTotal(e.target.checked)}
+              />
+              <label className="form-check-label" htmlFor="totalCheck">
+                Total traitement (tous les jours)
+              </label>
+            </div>
+          </div>
 
           {loading ? (
             <div className="text-center py-4">
@@ -200,101 +189,66 @@ const userDr = localStorage.getItem('userDr');
                     <CTableHeaderCell>Affectation recours</CTableHeaderCell>
                     <CTableHeaderCell>Dernière connexion</CTableHeaderCell>
                     <CTableHeaderCell>Dernière déconnexion</CTableHeaderCell>
-                    <CTableHeaderCell>traitement</CTableHeaderCell>
+                    <CTableHeaderCell>Traitement</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
                   {filteredUsers.length > 0 ? (
                     filteredUsers.map((user) => (
                       <CTableRow key={user.id} className="table-row-hover">
-                        <CTableDataCell style={{ width: '5%' }}>
-                        
-                        {(() => {
-  const lastLogin = user.last_login ? new Date(user.last_login) : null;
-  const now = new Date();
-  const sixHours = 6 * 60 * 60 * 1000;
-  const isActive = user.status === 'online' && lastLogin && (now - lastLogin) <= sixHours;
-
-  return (
-    <FaCircle
-      color={isActive ? 'green' : 'red'}
-      title={isActive ? 'online' : 'offline'}
-      style={{ fontSize: '0.9rem' }}
-    />
-  );
-})()}
-
-
-
+                        <CTableDataCell>
+                          {(() => {
+                            const lastLogin = user.last_login ? new Date(user.last_login) : null;
+                            const now = new Date();
+                            const sixHours = 6 * 60 * 60 * 1000;
+                            const isActive = user.status === 'online' && lastLogin && (now - lastLogin) <= sixHours;
+                            return (
+                              <FaCircle
+                                color={isActive ? 'green' : 'red'}
+                                title={isActive ? 'online' : 'offline'}
+                                style={{ fontSize: '0.9rem' }}
+                              />
+                            );
+                          })()}
                         </CTableDataCell>
                         <CTableDataCell>{user.name || '-'}</CTableDataCell>
-                        <CTableDataCell>
-  {user.role === 'membre' ? 'president' : (user.role || '-')}
-</CTableDataCell>
-
+                        <CTableDataCell>{user.role === 'membre' ? 'president' : (user.role || '-')}</CTableDataCell>
                         <CTableDataCell>{user.dr || '-'}</CTableDataCell>
                         <CTableDataCell>{user.affectation || '-'}</CTableDataCell>
                         <CTableDataCell>
-  {editingUserId === user.id ? (
-    <div className="d-flex align-items-center gap-2">
-      <CFormSelect
-        size="sm"
-        value={newAffectationRecours}
-        onChange={(e) => setNewAffectationRecours(e.target.value)}
-      >
-       
-       
-       <option value="traitement">Traitement</option>
-                <option value="mhuv">mhuv</option>
-
-                <option value="dgdn">dgdn</option>
-             
-      </CFormSelect>
-      <CButton
-        color="success"
-        size="sm"
-        onClick={() => handleUpdateAffectationRecours(user.id)}
-      >
-        Enregistrer
-      </CButton>
-      <CButton
-        color="secondary"
-        size="sm"
-        variant="outline"
-        onClick={() => {
-          setEditingUserId(null);
-          setNewAffectationRecours('traitement');
-        }}
-      >
-        Annuler
-      </CButton>
-    </div>
-  ) : (
-    <div className="d-flex align-items-center justify-content-between">
-      <span>{user.affectation_recours || '-'}</span>
-      {(userRole === 'admin' || userRole === 'membre') &&
-      <CButton
-        color="warning"
-        size="sm"
-        onClick={() => {
-          setEditingUserId(user.id);
-          setNewAffectationRecours(user.affectation_recours || 'traitement');
-        }}
-      >
-        Modifier
-      </CButton> }
-    </div>
-  )}
-</CTableDataCell>
-
+                          {editingUserId === user.id ? (
+                            <div className="d-flex align-items-center gap-2">
+                              <CFormSelect
+                                size="sm"
+                                value={newAffectationRecours}
+                                onChange={(e) => setNewAffectationRecours(e.target.value)}
+                              >
+                                <option value="traitement">Traitement</option>
+                                <option value="mhuv">mhuv</option>
+                                <option value="dgdn">dgdn</option>
+                              </CFormSelect>
+                              <CButton color="success" size="sm" onClick={() => handleUpdateAffectationRecours(user.id)}>Enregistrer</CButton>
+                              <CButton color="secondary" size="sm" variant="outline" onClick={() => setEditingUserId(null)}>Annuler</CButton>
+                            </div>
+                          ) : (
+                            <div className="d-flex align-items-center justify-content-between">
+                              <span>{user.affectation_recours || '-'}</span>
+                              {(userRole === 'admin' || userRole === 'membre') &&
+                                <CButton color="warning" size="sm" onClick={() => {
+                                  setEditingUserId(user.id);
+                                  setNewAffectationRecours(user.affectation_recours || 'traitement');
+                                }}>Modifier</CButton>}
+                            </div>
+                          )}
+                        </CTableDataCell>
                         <CTableDataCell>{user.last_login ?? '-'}</CTableDataCell>
                         <CTableDataCell>{user.last_logout ?? '-'}</CTableDataCell>
-                        <CTableDataCell>{user.role==='cadre_commercial' && user.count_traite}</CTableDataCell>
+                        <CTableDataCell>{user.role === 'cadre_commercial' && user.count_traite}</CTableDataCell>
                       </CTableRow>
                     ))
                   ) : (
                     <CTableRow>
-                      <CTableDataCell colSpan={8} className="text-center text-muted">
+                      <CTableDataCell colSpan={9} className="text-center text-muted">
                         Aucun utilisateur trouvé.
                       </CTableDataCell>
                     </CTableRow>
@@ -333,47 +287,34 @@ const userDr = localStorage.getItem('userDr');
               <CFormLabel>Affectation</CFormLabel>
               <CFormInput name="affectation" value={newUser.affectation} onChange={handleChange} />
             </div>
-           
-
-
             <div className="mb-2">
-  <CFormLabel>DR</CFormLabel>
-  <CFormSelect name="dr" value={newUser.dr} onChange={handleChange} disabled={userRole === 'membre'} >
-    <option value={""}>-- Sélectionner une région --</option>
-    {regions.map((region) => (
-  <option key={region.code} value={region.code}>{region.name}</option>
-))}
-
-  </CFormSelect>
-</div>
-
-            <div className="mb-3">
-              <CFormLabel>Rôle</CFormLabel>
-              <CFormSelect name="role" value={newUser.role} onChange={handleChange} disabled={userRole === 'membre'} >
-                <option value="admin">Admin</option>
-                
-                <option value="membre">President</option>
-                <option value="cadre_commercial">Cadre Commercial</option>
-               
+              <CFormLabel>DR</CFormLabel>
+              <CFormSelect name="dr" value={newUser.dr} onChange={handleChange} disabled={userRole === 'membre'}>
+                <option value="">-- Sélectionner une région --</option>
+                {regions.map((region) => (
+                  <option key={region.code} value={region.code}>{region.name}</option>
+                ))}
               </CFormSelect>
             </div>
             <div className="mb-3">
-              <CFormLabel>affectation recours</CFormLabel>
+              <CFormLabel>Rôle</CFormLabel>
+              <CFormSelect name="role" value={newUser.role} onChange={handleChange} disabled={userRole === 'membre'}>
+                <option value="admin">Admin</option>
+                <option value="membre">President</option>
+                <option value="cadre_commercial">Cadre Commercial</option>
+              </CFormSelect>
+            </div>
+            <div className="mb-3">
+              <CFormLabel>Affectation recours</CFormLabel>
               <CFormSelect name="affectation_recours" value={newUser.affectation_recours} onChange={handleChange}>
                 <option value="traitement">Traitement</option>
                 <option value="mhuv">mhuv</option>
-
                 <option value="dgdn">dgdn</option>
-             
-              
               </CFormSelect>
             </div>
-
           </CModalBody>
           <CModalFooter>
-            <CButton color="secondary" onClick={() => setShowAddModal(false)}>
-              Annuler
-            </CButton>
+            <CButton color="secondary" onClick={() => setShowAddModal(false)}>Annuler</CButton>
             <CButton type="submit" color="success" disabled={submitting}>
               {submitting ? <CSpinner size="sm" /> : 'Ajouter'}
             </CButton>
@@ -397,7 +338,6 @@ const userDr = localStorage.getItem('userDr');
           transition: background-color 0.3s ease;
           border-radius: 8px;
           box-shadow: 0 2px 5px rgb(0 0 0 / 0.05);
-          margin-bottom: 10px;
         }
         .table-modern tbody tr.table-row-hover:hover {
           background-color: #e6f0ff;

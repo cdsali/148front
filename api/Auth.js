@@ -30,8 +30,8 @@ export const login = async (username, password) => {
 
 
   
-  
-  export const fetchUserSessions = async () => {
+  /*
+  export const fetchUserSessions = async (filtres) => {
     try {
       const token = localStorage.getItem("token");
   
@@ -60,7 +60,44 @@ export const login = async (username, password) => {
       throw new Error(error.message || 'Une erreur est survenue. Veuillez réessayer.');
     }
   };
+  */
+
+
+  export const fetchUserSessions = async (filters = {}) => {
+    try {
+      const token = localStorage.getItem("token");
   
+      if (!token) {
+        console.warn("Aucun token trouvé dans le stockage local");
+        return null;
+      }
+  
+      // Build query parameters (e.g., ?date=2025-08-24)
+      const queryParams = new URLSearchParams();
+      if (filters.date) {
+        queryParams.append('date', filters.date);
+      }
+  
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/user/session?${queryParams.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const data = await response.json();
+  
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Erreur lors de la récupération des sessions');
+      }
+  
+      return data.data;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des sessions:', error);
+      throw new Error(error.message || 'Une erreur est survenue. Veuillez réessayer.');
+    }
+  };
   
 
   export const createUser = async (userData) => {
@@ -129,7 +166,7 @@ export const login = async (username, password) => {
 
 
 
-  export const fetchUserSessionsDr = async () => {
+  export const fetchUserSessionsDr = async (filters = {}) => {
     try {
       const token = localStorage.getItem("token");
   
@@ -137,8 +174,14 @@ export const login = async (username, password) => {
         console.warn("Aucun token trouvé dans le stockage local");
         return null;
       }
+
+
+      const queryParams = new URLSearchParams();
+      if (filters.date) {
+        queryParams.append('date', filters.date);
+      }
   
-      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/user/sessionDr`, {
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/user/sessionDr?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

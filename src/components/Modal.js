@@ -45,7 +45,12 @@ export default function RejectModal({ isOpen, onClose, souscripteurId, onSuccess
     { code: "G1", text_fr: "Salaire supérieur à 120 000 DA", text_ar: "الأجر يفوق 120,000 دج." },
     { code: "G2", text_fr: "Salaire égal ou inférieur à 24 000 DA", text_ar: "الأجر يساوي أو يقل عن 24,000 دج." },
   { code: "G3", text_fr: "Manque affiliation CNAS/CASNOS", text_ar: "غياب الانخراط في CNAS/CASNOS." },
-  { code: "G4", text_fr: "Favorable sous réserve de restitution des clés à l’organisme bailleur", text_ar: "مقبول بشرط إرجاع المفاتيح إلى الهيئة المالكة." }
+  { code: "G4", text_fr: "Favorable sous réserve de restitution des clés à l’organisme bailleur", text_ar: "مقبول بشرط إرجاع المفاتيح إلى الهيئة المالكة." },
+
+  { code: "G5", text_fr: "Âge du souscripteur non conforme : doit être compris entre 19 et 70 ans", text_ar: " عمر المشترك غير المطابق: يجب أن يكون بين 19 و 70 عامًا" }
+   
+ 
+
   ];
   
 

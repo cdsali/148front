@@ -17,11 +17,18 @@ import {
 } from '@coreui/react';
 import { FaArrowLeft, FaArrowRight, FaEye } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { fetchValidationsPaginated, postBulkValidations, fetchValidationsPv } from '../../../api/souscripteurs';
+import {
+  fetchValidationsPaginated,
+  postBulkValidations,
+  fetchValidationsPv,
+  
+} from '../../../api/souscripteurs';
+
+import { fetchUserSessionsDr } from '../../../api/Auth';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 20;
 
 const ValidationsPage = () => {
   const storedUser = localStorage.getItem('UserDr');
@@ -32,16 +39,20 @@ const ValidationsPage = () => {
   const [loading, setLoading] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [pagination, setPagination] = useState({ lastId: null, hasNextPage: false });
+  const [users, setUsers] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [pageStack, setPageStack] = useState([]);
 
   const navigate = useNavigate();
 
-  const loadData = async (type, cursor = null, isNext = true, bol = false) => {
-    setLoading(false);
+  const loadData = async (type, cursor = null, isNext = true, bol = false, userId = null) => {
+    setLoading(true);
 
     try {
       const result = await fetchValidationsPaginated({
         decision: type,
         userDr,
+        userId,
         observation_cadre: bol,
         limit: ITEMS_PER_PAGE,
         lastId: cursor,
@@ -49,20 +60,13 @@ const ValidationsPage = () => {
 
       if (Array.isArray(result) && result.length > 0) {
         setValidations(result);
-        setHasNextPage(result.length === ITEMS_PER_PAGE);
-
-        if (isNext && result.length > 0) {
-          setPrevStack((prev) => [...prev, cursor]);
-          setLastId(result[result.length - 1].id_souscripteur);
-        }
-
-        if (!isNext) {
-          setLastId(cursor);
-          setPrevStack((prev) => prev.slice(0, -1));
-        }
+        setPagination({
+          lastId: result[result.length - 1].id_souscripteur,
+          hasNextPage: result.length === ITEMS_PER_PAGE,
+        });
       } else {
         setValidations([]);
-        setHasNextPage(false);
+        setPagination({ lastId: null, hasNextPage: false });
       }
 
       setSelectedRows([]);
@@ -72,6 +76,19 @@ const ValidationsPage = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const getUsers = async () => {
+      try {
+        const result = await fetchUserSessionsDr();
+        setUsers(result);
+      } catch (err) {
+        console.error('Erreur lors du chargement des utilisateurs :', err);
+      }
+    };
+
+    getUsers();
+  }, []);
 
   useEffect(() => {
     if (decisionType) {
@@ -85,20 +102,28 @@ const ValidationsPage = () => {
         bol = true;
       }
 
-      loadData(dec, null, true, bol);
+      loadData(dec, null, true, bol, selectedUserId);
     }
-  }, [decisionType]);
+  }, [decisionType, selectedUserId]);
 
   const handleNext = () => {
     if (pagination.hasNextPage) {
-      loadData(decisionType, pagination.lastId);
+      setPageStack((prev) => [...prev, pagination.lastId]);
+      loadData(decisionType, pagination.lastId, true, false, selectedUserId);
     }
   };
+  
 
   const handlePrev = () => {
-    setPagination((prev) => ({ ...prev, lastId: prev.lastId - ITEMS_PER_PAGE }));
-    loadData(decisionType, pagination.lastId);
+    if (pageStack.length === 0) return;
+  
+    const newStack = [...pageStack];
+    const prevLastId = newStack.pop();
+    setPageStack(newStack);
+  
+    loadData(decisionType, prevLastId, false, false, selectedUserId);
   };
+  
 
   const handleView = (id) => {
     navigate('/sous_details_membre', { state: { id } });
@@ -205,19 +230,19 @@ const ValidationsPage = () => {
       alert('Token manquant, veuillez vous reconnecter.');
       return;
     }
-  
+
     const payload = JSON.parse(atob(token.split('.')[1]));
     const agentId = payload?.userId;
     if (!agentId) {
       alert("Impossible d'identifier l'utilisateur");
       return;
     }
-  
+
     if (selectedRows.length === 0) {
       alert('Aucun souscripteur sélectionné.');
       return;
     }
-  
+
     const decisionsArray = selectedRows.map(id => ({
       souscripteurId: id,
       agentId,
@@ -225,14 +250,31 @@ const ValidationsPage = () => {
       motif: null,
       observation: null
     }));
-  
+
     const res = await postBulkValidations(decisionsArray);
-  
+
     if (res?.success) {
       alert('Validations enregistrées.');
-    
-      setValidations((prev) => prev.filter((v) => !selectedRows.includes(v.id_souscripteur)));
+     // setValidations((prev) => prev.filter((v) => !selectedRows.includes(v.id_souscripteur)));
       setSelectedRows([]);
+  
+
+
+    // Re-load data with current filters and pagination
+    let dec = decisionType;
+    let bol = false;
+    if (decisionType === 'rejeteo') {
+      dec = 'rejete';
+      bol = true;
+    } else if (decisionType === 'completeo') {
+      dec = 'complete';
+      bol = true;
+    }
+
+    await loadData(dec, null, true, bol, selectedUserId);
+
+
+
     } else {
       alert('Erreur lors de la validation.');
     }
@@ -256,51 +298,36 @@ const ValidationsPage = () => {
 
       <CRow className="mb-3">
         <CCol className="d-flex justify-content-center gap-2 flex-wrap">
-          <CButton
-            size="sm"
-            color={decisionType === 'valide' ? 'success' : 'light'}
-            onClick={() => handleToggle('valide')}
+          <CButton size="sm" color={decisionType === 'valide' ? 'success' : 'light'} onClick={() => handleToggle('valide')}>Favorables</CButton>
+          <CButton size="sm" color={decisionType === 'rejete' ? 'danger' : 'light'} onClick={() => handleToggle('rejete')}>Défavorables</CButton>
+          <CButton size="sm" color={decisionType === 'rejeteo' ? 'danger' : 'light'} onClick={() => handleToggle('rejeteo')}>Défavorables observation</CButton>
+          <CButton size="sm" color={decisionType === 'complete' ? 'warning' : 'light'} onClick={() => handleToggle('complete')}>Completer</CButton>
+          <CButton size="sm" color={decisionType === 'completeo' ? 'warning' : 'light'} onClick={() => handleToggle('completeo')}>Completer observation</CButton>
+        </CCol>
+      </CRow>
+
+      <CRow className="mb-3">
+        <CCol md={4}>
+          <label className="form-label fw-semibold">Filtrer par agent</label>
+          <select
+            className="form-select"
+            value={selectedUserId || ''}
+            onChange={(e) => setSelectedUserId(e.target.value ? parseInt(e.target.value) : null)}
           >
-            Favorables
-          </CButton>
-          <CButton
-            size="sm"
-            color={decisionType === 'rejete' ? 'danger' : 'light'}
-            onClick={() => handleToggle('rejete')}
-          >
-            Défavorables
-          </CButton>
-          <CButton
-            size="sm"
-            color={decisionType === 'rejeteo' ? 'danger' : 'light'}
-            onClick={() => handleToggle('rejeteo')}
-          >
-            Défavorables observation
-          </CButton>
-          <CButton
-            size="sm"
-            color={decisionType === 'complete' ? 'warning' : 'light'}
-            onClick={() => handleToggle('complete')}
-          >
-            Completer
-          </CButton>
-          <CButton
-            size="sm"
-            color={decisionType === 'completeo' ? 'warning' : 'light'}
-            onClick={() => handleToggle('completeo')}
-          >
-            Completer observation
-          </CButton>
+            <option value="">Tous les agents</option>
+            {users.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.name}
+              </option>
+            ))}
+          </select>
         </CCol>
       </CRow>
 
       <CCard>
         <CCardBody>
           <CCardTitle className="text-center fw-bold mb-3 fs-6">
-            Liste des validations{' '}
-            <span className={`text-${decisionType === 'valide' ? 'success' : 'danger'}`}>
-              {decisionType === 'valide' ? 'favorables' : decisionType === 'rejete' ? 'défavorables' : ''}
-            </span>
+            Liste des validations
           </CCardTitle>
 
           {loading ? (
@@ -317,15 +344,8 @@ const ValidationsPage = () => {
                     <CTableRow className="bg-dark text-white">
                       <CTableHeaderCell>
                         <CFormCheck
-                          checked={
-                            selectedRows.length > 0 &&
-                            selectedRows.length === validations.length
-                          }
-                          onChange={(e) =>
-                            setSelectedRows(
-                              e.target.checked ? validations.map((v) => v.id_souscripteur) : []
-                            )
-                          }
+                          checked={selectedRows.length > 0 && selectedRows.length === validations.length}
+                          onChange={(e) => setSelectedRows(e.target.checked ? validations.map(v => v.id_souscripteur) : [])}
                         />
                       </CTableHeaderCell>
                       <CTableHeaderCell>Nom</CTableHeaderCell>
@@ -350,23 +370,14 @@ const ValidationsPage = () => {
                         <CTableDataCell>{v.nom}</CTableDataCell>
                         <CTableDataCell>{v.prenom}</CTableDataCell>
                         <CTableDataCell>{v.date_nais}</CTableDataCell>
-                        <CTableDataCell
-                          className={`fw-semibold text-${
-                            v.decision === 'valide' ? 'success' : 'danger'
-                          }`}
-                        >
+                        <CTableDataCell className={`fw-semibold text-${v.decision === 'valide' ? 'success' : 'danger'}`}>
                           {v.decision}
                         </CTableDataCell>
                         <CTableDataCell>{v.agent_name}</CTableDataCell>
                         <CTableDataCell>{v.affectation}</CTableDataCell>
                         <CTableDataCell>{v.validated_at}</CTableDataCell>
                         <CTableDataCell>
-                          <CButton
-                            size="sm"
-                            color="info"
-                            variant="outline"
-                            onClick={() => handleView(v.id_souscripteur)}
-                          >
+                          <CButton size="sm" color="info" variant="outline" onClick={() => handleView(v.id_souscripteur)}>
                             <FaEye />
                           </CButton>
                         </CTableDataCell>
@@ -377,20 +388,10 @@ const ValidationsPage = () => {
               </div>
 
               <div className="d-flex justify-content-between">
-                <CButton
-                  size="sm"
-                  color="light"
-                  disabled={!pagination.lastId}
-                  onClick={handlePrev}
-                >
+                <CButton size="sm" color="light" disabled={!pagination.lastId} style={{display:'none'}} onClick={handlePrev}>
                   <FaArrowLeft /> Précédent
                 </CButton>
-                <CButton
-                  size="sm"
-                  color="light"
-                  disabled={!pagination.hasNextPage}
-                  onClick={handleNext}
-                >
+                <CButton size="sm" color="light" disabled={!pagination.hasNextPage} style={{display:'none'}} onClick={handleNext}>
                   Suivant <FaArrowRight />
                 </CButton>
               </div>
@@ -419,7 +420,3 @@ const ValidationsPage = () => {
 };
 
 export default ValidationsPage;
-
-
-
-
